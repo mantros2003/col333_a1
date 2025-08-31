@@ -42,6 +42,27 @@ struct Helicopter {
     double alpha;
 };
 
+struct H_state {
+    int home_city_count;
+    int dry_food_count;
+    int wet_food_count;
+    int other_supplies_count;
+    double weight_capacity;
+    double distance_capacity;
+    double distance_max_capacity;
+};
+
+struct V_state {
+    int dry_food_count;
+    int wet_food_count;
+    int other_supplies_count;
+};
+
+struct State {
+    vector<H_state> h_states;
+    vector<V_state> v_states;
+};
+
 struct ProblemData {
     double time_limit_minutes;
     double d_max;
