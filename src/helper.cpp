@@ -4,9 +4,16 @@
 
 #include "structures.h"
 
-/**
- * Stores the state of a single helicopter
- */
+/** Stores the information for a single helicopter trip */
+struct Trip {
+    vector<int> villages;
+    bool is_complete;
+    double distance_covered;
+    int supplies_distributed[3];
+};
+
+// IDEA: Don't precompute the supplies being taken on a trip
+/** Stores the state of a single helicopter */
 struct HeliState {
     Helicopter heli;
     int dry_food_left;
@@ -15,12 +22,10 @@ struct HeliState {
     // Vector of vector of ints
     // For each trip, a different vector is created
     // Each vector has the village id in order of visits
-    vector<vector<int>> trips;
+    vector<Trip> trips;
 };
 
-/**
- * Stores the state of a single village
- */
+/** Stores the state of a single village */
 struct VillageState {
     Village vill;
     int dry_food_rec;
@@ -28,10 +33,38 @@ struct VillageState {
     int other_food_rec;
 };
 
+/** Combines helicopter and village states */
 struct State {
     vector<HeliState> heliStates;
     vector<VillageState> villageStates;
 };
+
+/** Node for the search tree */
+struct Node {
+    State state;
+    double g;
+    double h;
+
+    bool operator>(const Node& other) const {
+        return (g + h) > (other.g + other.h);
+    }
+};
+
+/**
+ * Calculates the total distance traveled by a single helicopter in all its trips
+ * 
+ * Each trip starts at the home city, visits some villages, and may return to the home city
+ * @param heli_state The state of a single helicopter.
+ * @return The total distance traveled in kilometers.
+ */
+inline double calculateTotalHeliDistance(const HeliState& heli_state, const ProblemData &problem) {
+    double total_distance = 0.0;
+
+    // Iterate through each trip undertaken by the helicopter
+    for (const Trip &trip : heli_state.trips) { total_distance += trip.distance_covered; }
+
+    return total_distance;
+}
 
 // Need to change state
 // States need to store order and values of drops to implement capping logic
@@ -48,7 +81,7 @@ double value(State &s, const ProblemData &problem) {
         // Calculate the total distance covered by helicopter over all the trips
         double total_trip_dist = 0.0;
         for (auto &trip: heli_state.trips) {
-            for (int i = 0; i < trip.size(); i++) {
+            for (int i = 0; i < trip.villages.size(); i++) {
                 // If first village, then distance from home, else from previous village
                 total_trip_dist += distance(problem.villages[i].coords, i ? problem.villages[i-1].coords : home_city);
             }
@@ -62,13 +95,9 @@ double value(State &s, const ProblemData &problem) {
     double w_d, w_w, w_o;   // Weights
     double v_d, v_w, v_o;   // Values
 
-    w_d = problem.packages[0].weight;
-    w_w = problem.packages[1].weight;
-    w_o = problem.packages[2].weight;
-
     v_d = problem.packages[0].value;
-    v_d = problem.packages[1].value;
-    v_d = problem.packages[2].value;
+    v_w = problem.packages[1].value;
+    v_o = problem.packages[2].value;
 
     // Iteratw over all village states
     for (auto &village_state: s.villageStates) {
@@ -83,23 +112,22 @@ double value(State &s, const ProblemData &problem) {
  * @param s The state
  * @param v The village id
  */
-bool is_village_satisfied(State &s, int v) {
+bool is_village_satisfied(const State &s, int v) {
     VillageState state = s.villageStates[v-1];
     int village_pop = state.vill.population;
 
-    return ((state.dry_food_rec + state.wet_food_rec) >= 9 * village_pop) & (state.other_food_rec >= village_pop)
+    return ((state.dry_food_rec + state.wet_food_rec) >= 9 * village_pop) & (state.other_food_rec >= village_pop);
 }
 
-// TODO: Move the function to solver.cpp
-State expand(State &s, const ProblemData &problem) {
-    int num_helicopters = s.heliStates.size();
-    priority_queue<int, vector<int>, greater<int>> min_pq;
-
-    for (int i = 0; i < num_helicopters; ++i) {
-        
-    }
-}
-
+/**
+ * Preprocesses the input and precomputes useful information
+ * 
+ * Currently computes villages reachable by a helicopter
+ * 
+ * TODO: Add more things that can be cached and precomputed
+ * @param problem Problem data
+ * @returns All villages reachable by a helicopter
+ */
 vector<vector<int>> preprocess(const ProblemData &problem) {
     int num_cities = problem.cities.size();
     int num_villages = problem.villages.size();
@@ -115,4 +143,107 @@ vector<vector<int>> preprocess(const ProblemData &problem) {
     }
 
     return reachable_by_heli;
+}
+
+
+// Not working on this implemntation
+/** TODO: Move the function to solver.cpp */
+State expand(State &s, const ProblemData &problem) {
+    int num_helicopters = s.heliStates.size();
+    priority_queue<int, vector<int>, greater<int>> min_pq;
+
+    for (int i = 0; i < num_helicopters; ++i) {
+        
+    }
+}
+
+// Enumerate all the possible situations in the conditions
+std::vector<Node> expand(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State)) {
+    std::vector<Node> successors;
+    const State& parent_state = parent_node.state;
+
+    // Iterate through each helicopter to find possible next moves
+    for (size_t i = 0; i < parent_state.heliStates.size(); ++i) {
+        const HeliState &heli_state = parent_state.heliStates[i];
+        const Helicopter &heli = heli_state.heli;
+        bool at_home = false;   // If at home, or in a trip
+        
+        // Find the current location of the helicopter
+        Point current_pos;
+        if (heli_state.trips.empty() || heli_state.trips.back().villages.back() == -1) {
+            // Condition that no trip is started or a trip has started but is empty
+            current_pos = problem.cities[heli.home_city_id - 1];
+            at_home = true;
+        } else {
+            int last_village_id = heli_state.trips.back().villages.back();
+            current_pos = problem.villages[last_village_id - 1].coords;
+        }
+
+        // If helicopter at home city, then look for a trip
+        if (at_home) {
+            for (const Village &v: problem.villages) {
+                if (! is_village_satisfied(parent_state, v.id)) {
+                    const VillageState& village_sate = parent_state.villageStates[v.id-1];
+
+                    // Additional requirement of the village
+                    int meals_needed = (v.population * 9) - (village_sate.wet_food_rec + village_sate.dry_food_rec);
+                    int other_needed = v.population - (village_sate.other_food_rec);
+
+                    int max_meals = std::max(meals_needed, heli.weight_capacity);
+                    int max_other = std::max(other_needed * problem.packages[2].weight, heli.weight_capacity);
+                }
+            }
+        }
+
+        // Action 1: Start a new trip to an unvisited village
+        for (const auto &vs : parent_state.villageStates) {
+            // Check if the village has remaining needs and can be reached by a new trip
+            // REDO and CHECK this section
+            if (! is_village_satisfied(parent_state, vs.vill.id)) {
+                
+                // Create a copy of the parent state
+                State new_state = parent_state;
+                
+                // Calculate minimum necessary packages for the trip
+                int meals_needed = vs.vill.population * 9;
+                int other_needed = vs.vill.population;
+                
+                // Greedily prioritize perishable food for value
+                int perishable_deliver = std::min(meals_needed, 10000);
+                int dry_deliver = std::min(meals_needed - perishable_deliver, 10000);
+                int other_deliver = std::min(other_needed, 10000);
+
+                double trip_weight = perishable_deliver * problem.packages[0].weight +
+                                        dry_deliver * problem.packages[1].weight +
+                                        other_deliver * problem.packages[2].weight;
+
+                double trip_dist = distance(problem.cities[heli.home_city_id-1], vs.vill.coords) +
+                                   distance(vs.vill.coords, problem.cities[heli.home_city_id-1]);
+
+                // Check feasibility of the new trip
+                if (trip_weight <= heli.weight_capacity && trip_dist <= heli.distance_capacity && (calculateTotalHeliDistance(heli_state, problem) + trip_dist) <= problem.d_max) {
+                    
+                    // Update the state
+                    // new_state.heliStates[i].trips.push_back({vs.vill.id});
+                    // new_state.heliStates[i].heli.total_dist_traveled += trip_dist;
+                    new_state.heliStates[i].dry_food_left += dry_deliver;
+                    new_state.heliStates[i].wet_food_left += perishable_deliver;
+                    new_state.heliStates[i].other_food_left += other_deliver;
+                    new_state.villageStates[vs.vill.id - 1].dry_food_rec += dry_deliver;
+                    new_state.villageStates[vs.vill.id - 1].wet_food_rec += perishable_deliver;
+                    new_state.villageStates[vs.vill.id - 1].other_food_rec += other_deliver;
+                    // new_state.villageStates[vs.vill.id - 1].vill.remaining_people = 0;
+
+                    // Create and add the new node to the successors list
+                    Node new_node;
+                    new_node.state = new_state;
+                    new_node.g = g(new_state);
+                    new_node.h = h(new_state);
+                    successors.push_back(new_node);
+                }
+            }
+        }
+    }
+
+    return successors;
 }
