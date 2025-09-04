@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <set>
 
 #include "structures.h"
+#include "lp_solver.h"
 
 /** Stores the information for a single helicopter trip */
 struct Trip {
@@ -57,7 +59,7 @@ struct Node {
  * @param heli_state The state of a single helicopter.
  * @return The total distance traveled in kilometers.
  */
-inline double calculateTotalHeliDistance(const HeliState& heli_state, const ProblemData &problem) {
+inline double calculate_total_heli_distance(const HeliState& heli_state, const ProblemData &problem) {
     double total_distance = 0.0;
 
     // Iterate through each trip undertaken by the helicopter
@@ -157,6 +159,54 @@ State expand(State &s, const ProblemData &problem) {
     }
 }
 
+std::vector<Node> expand_single_heli(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State)) {
+    std::vector<Node> successors;
+    const State &parent_state = parent_node.state;
+
+    double values[3], weights[3];
+    for (int i = 0; i < 3; ++i) {
+        values[i] = problem.packages[i].value;
+        weights[i] = problem.packages[i].weight;
+    }
+
+    // Store the villages that need more supplies
+    std::vector<int> villages_left;
+    for (size_t v = 0; v < problem.villages.size(); ++v) {
+        if (! is_village_satisfied(parent_state, problem.villages[v].id)) { villages_left.push_back(v); }
+    }
+
+    // Iterate through each helicopter
+    for (size_t i = 0; i < problem.helicopters.size(); ++i) {
+        HeliState heli_state = parent_state.heliStates[i];
+        double d_travelled = calculate_total_heli_distance(heli_state, problem);
+        for (int v: villages_left) {
+            // Check if heli can travel to the village and come back
+            double travel_dist = 2*distance(problem.cities[heli_state.heli.id-1], problem.villages[v].coords);
+            if (travel_dist <= heli_state.heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
+                // Allocate supplies
+                std::pair<Point3d, double> allocation = solve_lp(values, weights, problem.villages[v].population, heli_state.heli.weight_capacity);
+
+                // Duplicate parent state, add a trip and then modify the village's state
+                State child_state = parent_state;
+
+                // Initialize a new trip
+                Trip t = {{v}, true, travel_dist, {allocation.first.x, allocation.first.y, allocation.first.z}};
+                child_state.heliStates[i].trips.push_back(t);
+
+                // Modify the village's state
+                child_state.villageStates[v].dry_food_rec += allocation.first.x;
+                child_state.villageStates[v].wet_food_rec += allocation.first.y;
+                child_state.villageStates[v].other_food_rec += allocation.first.z;
+
+                successors.push_back({child_state, g(child_state), h(child_state)});
+            }
+        }
+    }
+
+    return successors;
+}
+
+// Work in progress
 // Enumerate all the possible situations in the conditions
 std::vector<Node> expand(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State)) {
     std::vector<Node> successors;
@@ -189,7 +239,7 @@ std::vector<Node> expand(const Node &parent_node, const ProblemData &problem, do
                     int meals_needed = (v.population * 9) - (village_sate.wet_food_rec + village_sate.dry_food_rec);
                     int other_needed = v.population - (village_sate.other_food_rec);
 
-                    int max_meals = std::max(meals_needed, heli.weight_capacity);
+                    // int max_meals = std::max(meals_needed, heli.weight_capacity);
                     int max_other = std::max(other_needed * problem.packages[2].weight, heli.weight_capacity);
                 }
             }
@@ -221,7 +271,7 @@ std::vector<Node> expand(const Node &parent_node, const ProblemData &problem, do
                                    distance(vs.vill.coords, problem.cities[heli.home_city_id-1]);
 
                 // Check feasibility of the new trip
-                if (trip_weight <= heli.weight_capacity && trip_dist <= heli.distance_capacity && (calculateTotalHeliDistance(heli_state, problem) + trip_dist) <= problem.d_max) {
+                if (trip_weight <= heli.weight_capacity && trip_dist <= heli.distance_capacity && (calculate_total_heli_distance(heli_state, problem) + trip_dist) <= problem.d_max) {
                     
                     // Update the state
                     // new_state.heliStates[i].trips.push_back({vs.vill.id});

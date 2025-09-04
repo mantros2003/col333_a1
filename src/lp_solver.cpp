@@ -1,22 +1,5 @@
 #include <vector>
-
-#include "structures.h"
-
-const double EPSILON = 1e-9;
-
-struct Point3d {
-    double x, y, z;
-};
-
-struct Plane3d {
-    double coeff[4];
-};
-
-// 0 is for >=, 1 is for <=
-struct Constraint3d {
-    Plane3d c_plane;
-    bool kind;
-};
+#include "lp_solver.h"
 
 /** Compute the determinent of a 3*3 matrix */
 double det3(double m[3][3]) {
@@ -79,7 +62,7 @@ bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
 /**
  * Solve the LP by iterating throught all the hardcoded vertices of the polytope
  */
-double solve_lp(double v[3], double w[3], int n, double w_left) {
+std::pair<Point3d, double> solve_lp(double v[3], double w[3], int n, double w_left) {
     std::vector<Point3d> candidates;
 
     // 1. Intersection of a1=0, a2=0, a3=0
@@ -167,4 +150,6 @@ double solve_lp(double v[3], double w[3], int n, double w_left) {
             }
         }
     }
+
+    return std::pair<Point3d, double>(best_solution, best_objective);
 }
