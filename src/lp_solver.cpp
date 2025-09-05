@@ -62,11 +62,14 @@ bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
 /**
  * Solve the LP by iterating throught all the hardcoded vertices of the polytope
  */
-std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int n, double w_left) {
+std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int v_idx, double w_left) {
     /** 
         n = population
     */
-    
+    int n = problem_data.villages[v_idx].population;
+    int wet = current_state.villageStates[v_idx].wet_food_rec;
+    int dry = current_state.villageStates[v_idx].dry_food_rec;
+    int other = current_state.villageStates[v_idx].other_food_rec;
     std::vector<Point3d> candidates;
     double v[3], w[3];
     for (int i = 0; i < 3; ++i) {
@@ -76,72 +79,72 @@ std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State
     // 1. Intersection of a1=0, a2=0, a3=0
     candidates.push_back({0, 0, 0});
 
-    // 2. Intersection of a1=0, a2=0, a3=n
-    candidates.push_back({0, 0, n * 1.0});
+    // 2. Intersection of a1=0, a2=0, a3=n-other
+    candidates.push_back({0, 0, (n-other)*1.0});
 
     // 3. Intersection of a1=0, a2=0, w_3a_3=w'
     if (std::abs(w[2]) > EPSILON) {
         candidates.push_back({0, 0, w_left / w[2]});
     }
     
-    // 4. Intersection of a1=0, a3=0, a2=9n
-    candidates.push_back({0, 9.0*n, 0});
+    // 4. Intersection of a1=0, a3=0, a2=(9n-wet-dry)
+    candidates.push_back({0, 9.0*n-wet-dry, 0});
     
     // 5. Intersection of a1=0, a3=0, w_2a_2=w'
     if (std::abs(w[1]) > EPSILON) {
         candidates.push_back({0, w_left / w[1], 0});
     }
 
-    // 6. Intersection of a2=0, a3=0, a1=9n
-    candidates.push_back({9.0*n, 0, 0});
+    // 6. Intersection of a2=0, a3=0, a1=(9n-wet-dry)
+    candidates.push_back({9.0*n-wet-dry, 0, 0});
     
     // 7. Intersection of a2=0, a3=0, w_1a_1=w'
     if (std::abs(w[0]) > EPSILON) {
         candidates.push_back({w_left / w[0], 0, 0});
     }
 
-    // 8. Intersection of a1=0, a3=n, a2=9n
-    candidates.push_back({0, 9.0*n, 1.0*n});
+    // 8. Intersection of a1=0, a3=n-other, a2=(9n-wet-dry)
+    candidates.push_back({0, 9.0*n-wet-dry, 1.0*(n-other)});
 
-    // 9. Intersection of a1=0, a2=9n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 9. Intersection of a1=0, a2=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[2]) > EPSILON) {
         double a3 = (w_left - 9*n*w[1]) / w[2];
-        candidates.push_back({0, 9.0*n, a3});
+        candidates.push_back({0, 9.0*n-wet-dry, a3});
     }
 
-    // 10. Intersection of a2=0, a3=n, a1=9n
-    candidates.push_back({9.0*n, 0, 1.0*n});
+    // 10. Intersection of a2=0, a3=n-other, a1=(9n-wet-dry)
+    candidates.push_back({9.0*n-wet-dry, 0, 1.0*(n-other)});
 
-    // 11. Intersection of a2=0, a1=9n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 11. Intersection of a2=0, a1=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[2]) > EPSILON) {
         double a3 = (w_left - 9*n*w[0]) / w[2];
-        candidates.push_back({9.0*n, 0, a3});
+        candidates.push_back({9.0*n-wet-dry, 0, a3});
     }
     
-    // 12. Intersection of a1=0, a3=n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 12. Intersection of a1=0, a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[1]) > EPSILON) {
         double a2 = (w_left - n*w[2]) / w[1];
-        candidates.push_back({0, a2, 1.0*n});
+        candidates.push_back({0, a2, 1.0*(n-other)});
     }
     
-    // 13. Intersection of a2=0, a3=n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 13. Intersection of a2=0, a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[0]) > EPSILON) {
-        double a1 = (w_left - n*w[2]) / w[0];
-        candidates.push_back({a1, 0, 1.0*n});
+        double a1 = (w_left - (n-other)*w[2]) / w[0];
+        candidates.push_back({a1, 0, 1.0*(n-other)});
     }
 
-    // 14. Intersection of a3=0, a1+a2=9n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 14. Intersection of a3=0, a1+a2=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[1] - w[0]) > EPSILON) {
-        double a2 = (w_left - 9*n*w[0]) / (w[1] - w[0]);
-        double a1 = 9*n - a2;
+        double a2 = (w_left - (9*n-dry-wet)*w[0]) / (w[1] - w[0]);
+        double a1 = (9*n-dry-wet) - a2;
         candidates.push_back({a1, a2, 0});
     }
 
-    // 15. Intersection of a1+a2=9n, a3=n, w_1a_1+w_2a_2+w_3a_3=w'
+    // 15. Intersection of a1+a2=(9n-wet-dry), a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
     if (std::abs(w[1] - w[0]) > EPSILON) {
-        double a2 = (w_left - n*w[2] - 9*n*w[0]) / (w[1] - w[0]);
-        double a1 = 9*n - a2;
-        candidates.push_back({a1, a2, 1.0*n});
+        double a2 = (w_left - (n-other)*w[2] - (9*n-wet-dry)*w[0]) / (w[1] - w[0]);
+        double a1 = (9*n-dry-wet) - a2;
+        candidates.push_back({a1, a2, 1.0*(n-other)});
     }
 
     Point3d best_solution;
