@@ -67,6 +67,7 @@ struct Trip {
 
 struct HelicopterPlan {
     int helicopter_id;
+    double d_max_left;
     vector<Trip> trips;
 };
 

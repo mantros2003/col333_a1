@@ -60,6 +60,7 @@ Solution solve(const ProblemData& problem) {
     for (int i = 0; i < h_plan.size(); i++){
         h_plan[i].helicopter_id = i+1;
         h_plan[i].trips = temp_trip;
+        h_plan[i].d_max_left = problem.d_max;
     }
     root_state = {0,0, h_plan, village_state};
     current_state = root_state;
@@ -69,7 +70,6 @@ Solution solve(const ProblemData& problem) {
         count++;
         frontier = expand_single_heli(current_state, problem);
         if (frontier.size()){
-            cout<<"in if \n";
             current_state = *frontier.begin();
             // for (const auto& plan : current_state.heliStates) {
             //     cout << plan.helicopter_id << " " << plan.trips.size() << "\n";

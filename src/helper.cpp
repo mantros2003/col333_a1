@@ -86,18 +86,17 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
         HelicopterPlan heli_state = curr_state.heliStates[i];
         Helicopter heli = problem.helicopters[heli_state.helicopter_id-1];
         Point home_city = problem.cities[problem.helicopters[heli_state.helicopter_id-1].home_city_id-1];
-        double d_travelled = calculate_total_heli_distance(heli_state, problem);
 
         for (int v: villages_left) {
             // Check if heli can travel to the village and come back
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
-            if (travel_dist <= heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
+            if (travel_dist <= heli.distance_capacity && travel_dist <= curr_state.heliStates[heli.id-1].d_max_left) {
                 // Allocate supplies
                 std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, v, heli.weight_capacity);
                 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
-                // child_state.heliStates[heli.id-1]
+                child_state.heliStates[heli.id-1].d_max_left -= travel_dist;
                 // Initialize a new trip
                 /** TODO: Check the order of dry, perishable, other*/
 
