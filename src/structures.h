@@ -52,13 +52,16 @@ struct H_state {
     double distance_max_capacity;
 };
 
-struct V_state {
+struct V_state {    
+    bool help_needed;
     int dry_food_count;
     int wet_food_count;
     int other_supplies_count;
+    int population;
 };
 
 struct State {
+    double g_cost, h_cost;
     vector<H_state> h_states;
     vector<V_state> v_states;
 };
