@@ -4,6 +4,7 @@
 #include <set>
 #include <random>
 #include "cost_function.h"
+#include "structures.h"
 #include "helper.h"
 
 // Need to change state
@@ -94,10 +95,11 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
             if (travel_dist <= heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
                 // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, problem.villages[v].population, heli.weight_capacity);
-
+                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, problem.villages[v].population, heli.weight_capacity);
+                
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
+                child_state.villageStates[v].help_needed = false;
 
                 // Initialize a new trip
                 /** TODO: Check the order of dry, perishable, other*/
@@ -165,7 +167,7 @@ std::vector<State> expand_single_heli_stochastic(const State &curr_state, const 
                 random_weights[num_samples-1] = 1.0;
                 for (double r_wt: random_weights) {
                     // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, problem.villages[v].population, heli.weight_capacity);
+                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, problem.villages[v].population, heli.weight_capacity);
 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;

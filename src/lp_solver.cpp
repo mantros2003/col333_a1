@@ -62,7 +62,7 @@ bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
 /**
  * Solve the LP by iterating throught all the hardcoded vertices of the polytope
  */
-std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, int n, double w_left) {
+std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int n, double w_left) {
     /** 
         n = population
     */

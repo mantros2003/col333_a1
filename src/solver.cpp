@@ -53,6 +53,18 @@ Solution solve(const ProblemData& problem) {
     // Initialize the start state
     State root_state, current_state;
     vector<HelicopterPlan> h_plan(problem.helicopters.size());
+    cout<<"start_state : \n";
+    for (const auto& plan : h_plan) {
+        cout << plan.helicopter_id << " " << plan.trips.size() << "\n";
+        for (const auto& trip : plan.trips) {
+            cout << trip.dry_food_pickup << " " << trip.perishable_food_pickup << " " << trip.other_supplies_pickup << " " << trip.drops.size();
+            for (const auto& drop : trip.drops) {
+                cout<< " " << drop.village_id << " " << drop.dry_food << " " << drop.perishable_food << " " << drop.other_supplies;
+}
+            cout<< "\n";
+        }
+        cout<< -1 << "\n";
+    }
     vector<V_state> village_state(problem.villages.size(), {true, 0, 0, 0});
     vector<Trip> temp_trip;
     for (int i = 0; i < h_plan.size(); i++){
@@ -62,7 +74,9 @@ Solution solve(const ProblemData& problem) {
     root_state = {0,0, h_plan, village_state};
     current_state = root_state;
     set<State> frontier;
+    frontier.insert(current_state);
     while(count < 100 && !frontier.empty()){
+        cout<<"count: "<<count<<"\n";
         count++;
         frontier = expand_single_heli(current_state, problem);
         current_state = *frontier.begin();
