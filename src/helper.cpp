@@ -3,7 +3,7 @@
 #include <queue>
 #include <set>
 #include <random>
-
+#include "cost_function.h"
 #include "helper.h"
 
 // Need to change state
@@ -92,8 +92,8 @@ State expand(State &s, const ProblemData &problem) {
 }
 
 // Function for single helicopter single village trip expand
-std::vector<State> expand_single_heli(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State)) {
-    std::vector<State> successors;
+std::set<State> expand_single_heli(const State &curr_state, const ProblemData &problem) {
+    std::set<State> successors;
 
     double values[3], weights[3];
     for (int i = 0; i < 3; ++i) {
@@ -130,7 +130,7 @@ std::vector<State> expand_single_heli(const State &curr_state, const ProblemData
                 t.dry_food_pickup = allocation.first.x;
                 t.perishable_food_pickup = allocation.first.y;
                 t.other_supplies_pickup = allocation.first.z;
-                Drop d = {v+1, allocation.first.x, allocation.first.y, allocation.first.z};
+                Drop d = {v+1, (int)allocation.first.x, (int)allocation.first.y, (int)allocation.first.z};
                 t.drops = vector<Drop>(1, d);
                 child_state.heliStates[i].trips.push_back(t);
 
@@ -138,8 +138,9 @@ std::vector<State> expand_single_heli(const State &curr_state, const ProblemData
                 child_state.villageStates[v].dry_food_rec += allocation.first.x;
                 child_state.villageStates[v].wet_food_rec += allocation.first.y;
                 child_state.villageStates[v].other_food_rec += allocation.first.z;
-
-                successors.push_back(child_state);
+                child_state.g_cost = g(v,heli.home_city_id-1,heli_state.helicopter_id-1, problem, curr_state);
+                child_state.h_cost = h(heli_state.helicopter_id-1, v, problem, curr_state);
+                successors.insert(child_state);
             }
         }
     }
@@ -200,7 +201,7 @@ std::vector<State> expand_single_heli_stochastic(const State &curr_state, const 
                 t.dry_food_pickup = allocation.first.x;
                 t.perishable_food_pickup = allocation.first.y;
                 t.other_supplies_pickup = allocation.first.z;
-                Drop d = {v+1, allocation.first.x, allocation.first.y, allocation.first.z};
+                Drop d = {v+1, (int)allocation.first.x, (int)allocation.first.y, (int)allocation.first.z};
                 t.drops = vector<Drop>(1, d);
                 child_state.heliStates[i].trips.push_back(t);
 

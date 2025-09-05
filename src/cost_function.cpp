@@ -86,7 +86,7 @@ double distance_travelled(int s, const vector<int>& v_idx, const ProblemData& P)
     return max(span2,anchor);
 }
 
-double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, State& current_state){
+double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data,const State& current_state){
     // caluclate the cost from the start to this village.
     int fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
     int alpha = problem_data.helicopters[helicopter_index].alpha;
@@ -101,7 +101,7 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
     return prev_state_cost + value_cost - fuel_cost;
 }
 
-double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_data, State& current_state){
+double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_data, const State& current_state){
     vector<int> v_index; //index of all the villages that require help
     
     vector<V_state> village_states = current_state.villageStates;
