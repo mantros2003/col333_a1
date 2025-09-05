@@ -1,0 +1,4 @@
+[5 Sept.]
+Cuurently restricting problem to a single helicopter single village trip
+
+:TODO: - Think about how to add stochasticity to the problem, especially in resource allocation as all possible combinations of resource allocation can;t be explored(?)

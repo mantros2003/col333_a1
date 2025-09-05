@@ -2,55 +2,9 @@
 #include <vector>
 #include <queue>
 #include <set>
+#include <random>
 
-#include "structures.h"
-#include "lp_solver.h"
-
-/** Stores the information for a single helicopter trip */
-struct Trip {
-    vector<int> villages;
-    bool is_complete;
-    double distance_covered;
-    int supplies_distributed[3];
-};
-
-// IDEA: Don't precompute the supplies being taken on a trip
-/** Stores the state of a single helicopter */
-struct HeliState {
-    Helicopter heli;
-    int dry_food_left;
-    int wet_food_left;
-    int other_food_left;
-    // Vector of vector of ints
-    // For each trip, a different vector is created
-    // Each vector has the village id in order of visits
-    vector<Trip> trips;
-};
-
-/** Stores the state of a single village */
-struct VillageState {
-    Village vill;
-    int dry_food_rec;
-    int wet_food_rec;
-    int other_food_rec;
-};
-
-/** Combines helicopter and village states */
-struct State {
-    vector<HeliState> heliStates;
-    vector<VillageState> villageStates;
-};
-
-/** Node for the search tree */
-struct Node {
-    State state;
-    double g;
-    double h;
-
-    bool operator>(const Node& other) const {
-        return (g + h) > (other.g + other.h);
-    }
-};
+#include "helper.h"
 
 /**
  * Calculates the total distance traveled by a single helicopter in all its trips
@@ -199,6 +153,69 @@ std::vector<Node> expand_single_heli(const Node &parent_node, const ProblemData 
                 child_state.villageStates[v].other_food_rec += allocation.first.z;
 
                 successors.push_back({child_state, g(child_state), h(child_state)});
+            }
+        }
+    }
+
+    return successors;
+}
+
+// Same as the above function, just added stochasticity to the resource allocation problem
+// Made the constraint wTa <= w_cap*(random_weight)
+std::vector<Node> expand_single_heli_stochastic(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State), int num_samples) {
+    std::vector<Node> successors;
+    const State &parent_state = parent_node.state;
+
+    double values[3], weights[3];
+    for (int i = 0; i < 3; ++i) {
+        values[i] = problem.packages[i].value;
+        weights[i] = problem.packages[i].weight;
+    }
+
+    // Store the villages that need more supplies
+    std::vector<int> villages_left;
+    for (size_t v = 0; v < problem.villages.size(); ++v) {
+        if (! is_village_satisfied(parent_state, problem.villages[v].id)) { villages_left.push_back(v); }
+    }
+
+    // Iterate through each helicopter
+    for (size_t i = 0; i < problem.helicopters.size(); ++i) {
+        HeliState heli_state = parent_state.heliStates[i];
+        double d_travelled = calculate_total_heli_distance(heli_state, problem);
+        for (int v: villages_left) {
+            // Check if heli can travel to the village and come back
+            double travel_dist = 2*distance(problem.cities[heli_state.heli.id-1], problem.villages[v].coords);
+            if (travel_dist <= heli_state.heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
+                // Choose num_samples-1 random numbers in range 0.2 to 0.8
+                // And multiply with helicopter weight capacity to add stochasticity
+                // Add weight 1.0
+                std::random_device rd;
+                std::mt19937 gen(rd());  // random engine
+                std::uniform_real_distribution<double> dist(0.2, 0.8);
+
+                double random_weights[num_samples];
+                for (size_t rs = 0; rs < num_samples-1; ++rs) {
+                    random_weights[rs] = dist(gen);
+                }
+                random_weights[num_samples-1] = 1.0;
+                for (double r_wt: random_weights) {
+                    // Allocate supplies
+                    std::pair<Point3d, double> allocation = solve_lp(values, weights, problem.villages[v].population, heli_state.heli.weight_capacity * r_wt);
+
+                    // Duplicate parent state, add a trip and then modify the village's state
+                    State child_state = parent_state;
+
+                    // Initialize a new trip
+                    Trip t = {{v}, true, travel_dist, {allocation.first.x, allocation.first.y, allocation.first.z}};
+                    child_state.heliStates[i].trips.push_back(t);
+
+                    // Modify the village's state
+                    child_state.villageStates[v].dry_food_rec += allocation.first.x;
+                    child_state.villageStates[v].wet_food_rec += allocation.first.y;
+                    child_state.villageStates[v].other_food_rec += allocation.first.z;
+
+                    successors.push_back({child_state, g(child_state), h(child_state)});
+                }
             }
         }
     }
