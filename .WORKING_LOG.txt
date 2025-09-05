@@ -3,4 +3,4 @@ Cuurently restricting problem to a single helicopter single village trip
 
 :TODO:  - Think about how to add stochasticity to the problem, especially in resource allocation as all possible combinations of resource allocation can;t be explored(?)
 
-        - Currently we just visit a village once, and we do not check whether we actually fulfilled the requirements, change it to update the village's help requirement status only when fulfilling it's need is costly.
+        - Currently we just visit a village until the sum of dry and wet supply is less than 90 percent of the need, and we do not check whether we actually fulfilled the requirements, change it to update the village's help requirement status only when fulfilling it's need is costly.
