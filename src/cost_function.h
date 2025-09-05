@@ -3,10 +3,9 @@
 
 #include<vector>
 
-
 #include "helper.h"
-using namespace std;
 
+using namespace std;
 
 double proj(const Point& p, double cx, double sy);
 double nearest_into_set(int a, const vector<int>& v_idx, const ProblemData& P);

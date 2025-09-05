@@ -1,15 +1,14 @@
 [5 Sept.]
 Cuurently restricting problem to a single helicopter single village trip
 
-:TODO: - Think about how to add stochasticity to the problem, especially in resource allocation as all possible combinations of resource allocation can;t be explored(?)
+:TODO:  - Think about how to add stochasticity to the problem, especially in resource allocation as all possible combinations of resource allocation can;t be explored(?)
 
-Update solve-lp to consider the constraints such that it consider the helpt needed, instead of hard 9n constraint, change it to 9n-help_provided, and n-help_provided for other supplies
+        - [done] Update solve-lp to consider the constraints such that it consider the helpt needed, instead of hard 9n constraint, change it to 9n-help_provided, and n-help_provided for other supplies
 
-Refactor the code according to the changes in the struct
+        - [done] Refactor the code according to the changes in the struct
 
-decouple the expand function, output the vector of the index of the village
+        - decouple the expand function, output the vector of the index of the village
 
-Rename the parent_state to current_state
+        -[done] Rename the parent_state to current_state
 
-update the G cost function to add the lp solver function
-
+        - update the G cost function to add the lp solver function

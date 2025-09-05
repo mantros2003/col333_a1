@@ -41,19 +41,6 @@ double value(State &s, const ProblemData &problem) {
 }
 
 /**
- * Check if the village's needs are fulfilled
- * @param s The state
- * @param v The village id
- */
-// Remove this function, use the bool help_needed
-// bool is_village_satisfied(const State &s, int v) {
-//     VillageState state = s.villageStates[v-1];
-//     int village_pop = state.vill.population;
-
-//     return ((state.dry_food_rec + state.wet_food_rec) >= 9 * village_pop) & (state.other_food_rec >= village_pop);
-// }
-
-/**
  * Preprocesses the input and precomputes useful information
  * 
  * Currently computes villages reachable by a helicopter
@@ -77,18 +64,6 @@ vector<vector<int>> preprocess(const ProblemData &problem) {
     }
 
     return reachable_by_heli;
-}
-
-
-// Not working on this implemntation
-/** TODO: Move the function to solver.cpp */
-State expand(State &s, const ProblemData &problem) {
-    int num_helicopters = s.heliStates.size();
-    priority_queue<int, vector<int>, greater<int>> min_pq;
-
-    for (int i = 0; i < num_helicopters; ++i) {
-        
-    }
 }
 
 // Function for single helicopter single village trip expand
