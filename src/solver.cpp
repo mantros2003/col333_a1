@@ -76,10 +76,11 @@ Solution solve(const ProblemData& problem) {
     set<State> frontier;
     frontier.insert(current_state);
     while(count < 100 && !frontier.empty()){
-        cout<<"count: "<<count<<"\n";
         count++;
         frontier = expand_single_heli(current_state, problem);
-        current_state = *frontier.begin();
+        if (frontier.size()){
+            current_state = *frontier.begin();
+        }
     }
     solution = current_state.heliStates;
     

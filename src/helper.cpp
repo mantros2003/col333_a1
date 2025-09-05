@@ -76,13 +76,11 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
         values[i] = problem.packages[i].value;
         weights[i] = problem.packages[i].weight;
     }
-
     // Store the villages that need more supplies
     std::vector<int> villages_left;
     for (size_t v = 0; v < problem.villages.size(); ++v) {
         if (curr_state.villageStates[v].help_needed) { villages_left.push_back(v); }
     }
-
     // Iterate through each helicopter
     for (size_t i = 0; i < problem.helicopters.size(); ++i) {
         HelicopterPlan heli_state = curr_state.heliStates[i];
@@ -121,7 +119,6 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
             }
         }
     }
-
     return successors;
 }
 
