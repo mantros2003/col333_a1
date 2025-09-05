@@ -7,29 +7,11 @@
 #include "structures.h"
 #include "lp_solver.h"
 
-// Remove this Trip Struct, use the given struct
-// struct Trip {
-//     vector<int> villages;
-//     bool is_complete;
-//     double distance_covered;
-//     int supplies_distributed[3];
-// };
 
 // IDEA: Don't precompute the supplies being taken on a trip
 // Do we even need *_left variables
 /** Stores the state of a single helicopter */
 
-// Remove this helicopter state and use the provided Heliopter state
-// struct HeliState {
-//     Helicopter* heli;
-//     int dry_food_left;
-//     int wet_food_left;
-//     int other_food_left;
-//     // Vector of vector of ints
-//     // For each trip, a different vector is created
-//     // Each vector has the village id in order of visits
-//     vector<Trip> trips;
-// };
 
 /** Stores the state of a single village */
 struct V_state {
@@ -82,7 +64,7 @@ double value(State &s, const ProblemData &problem);
 std::vector<std::vector<int>> preprocess(const ProblemData &problem);
 
 State expand(State &s, const ProblemData &problem);
-std::vector<State> expand_single_heli(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
+std::set<State> expand_single_heli(const State &curr_state, const ProblemData &problem);
 std::vector<State> expand_single_heli_stochastic(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State), int num_samples);
 std::vector<State> expand(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
 
