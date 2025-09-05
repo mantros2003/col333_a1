@@ -1,10 +1,7 @@
 #include "solver.h"
 #include <iostream>
 #include <chrono>
-<<<<<<< HEAD
-=======
 // #include <cmath>
->>>>>>> heuristic
 
 using namespace std;
 // You can add any helper functions or classes you need here.
@@ -15,8 +12,6 @@ using namespace std;
  * plan to demonstrate how to build the Solution object. 
  * * TODO: REPLACE THIS ENTIRE FUNCTION WITH YOUR ALGORITHM.
  */
-<<<<<<< HEAD
-=======
 
 double dis(Point a, Point b){
     return sqrt(pow((a.x-b.x),2) + pow((a.y-b.y),2));
@@ -143,7 +138,6 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
 
 
 
->>>>>>> heuristic
 Solution solve(const ProblemData& problem) {
     cout << "Starting solver..." << endl;
 
@@ -153,7 +147,6 @@ Solution solve(const ProblemData& problem) {
     // This is a naive example: send each helicopter on one trip to the first village.
     // This will definitely violate constraints but shows the structure.
     
-<<<<<<< HEAD
     for (const auto& helicopter : problem.helicopters) {
         HelicopterPlan plan;
         plan.helicopter_id = helicopter.id;
@@ -177,8 +170,6 @@ Solution solve(const ProblemData& problem) {
         }
         solution.push_back(plan);
     }
-=======
->>>>>>> heuristic
     
     // --- END OF PLACEHOLDER LOGIC ---
 
