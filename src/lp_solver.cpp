@@ -62,9 +62,17 @@ bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
 /**
  * Solve the LP by iterating throught all the hardcoded vertices of the polytope
  */
-std::pair<Point3d, double> solve_lp(double v[3], double w[3], int n, double w_left) {
+std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, int n, double w_left) {
+    /** 
+        n = population
+    */
+    
     std::vector<Point3d> candidates;
-
+    double v[3], w[3];
+    for (int i = 0; i < 3; ++i) {
+        v[i] = problem_data.packages[i].value;
+        w[i] = problem_data.packages[i].weight;
+    }
     // 1. Intersection of a1=0, a2=0, a3=0
     candidates.push_back({0, 0, 0});
 

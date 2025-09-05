@@ -32,7 +32,7 @@
 // };
 
 /** Stores the state of a single village */
-struct VillageState {
+struct V_state {
     // Village vill;
     bool help_needed;
     int dry_food_rec;
@@ -44,7 +44,7 @@ struct VillageState {
 struct State {
     double g_cost, h_cost;
     vector<HelicopterPlan> heliStates;
-    vector<VillageState> villageStates;
+    vector<V_state> villageStates;
 
     bool operator>(const State& other) const {
         return (g_cost + h_cost) > (other.g_cost + other.h_cost);

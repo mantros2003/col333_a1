@@ -1,5 +1,5 @@
 #ifndef LP_SOLVER_H
-#define LP_SOVER_H
+#define LP_SOLVER_H
 
 #include <utility>
 
@@ -24,6 +24,6 @@ struct Constraint3d {
 double det3(double m[3][3]);
 Point3d intersection_pt(Plane3d p1, Plane3d p2, Plane3d p3);
 bool is_feasible(const Point3d &v, double n, double w_left, double w[3]);
-std::pair<Point3d, double> solve_lp(double v[3], double w[3], int n, double w_left);
+std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, int n, double w_left);
 
 #endif // LP_SOLVER_H

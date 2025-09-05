@@ -245,7 +245,7 @@ std::vector<State> expand(const State &curr_state, const ProblemData &problem, d
         if (at_home) {
             for (const Village &v: problem.villages) {
                 if (! curr_state.villageStates[v.id-1].help_needed) {
-                    const VillageState& village_sate = curr_state.villageStates[v.id-1];
+                    const V_state& village_sate = curr_state.villageStates[v.id-1];
 
                     // Additional requirement of the village
                     int meals_needed = (v.population * 9) - (village_sate.wet_food_rec + village_sate.dry_food_rec);
