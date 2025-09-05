@@ -77,20 +77,37 @@ struct State {
 // };
 
 
-inline double calculate_total_heli_distance(const HeliState& heli_state, const ProblemData &problem);
+inline double calculate_total_heli_distance(const HelicopterPlan heli_state, const ProblemData &problem);
 double value(State &s, const ProblemData &problem);
-bool is_village_satisfied(const State &s, int v);
 std::vector<std::vector<int>> preprocess(const ProblemData &problem);
 
 State expand(State &s, const ProblemData &problem);
-std::vector<Node> expand_single_heli(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State));
-std::vector<Node> expand(const Node &parent_node, const ProblemData &problem, double (*g)(State), double (*h)(State));
+std::vector<State> expand_single_heli(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
+std::vector<State> expand_single_heli_stochastic(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State), int num_samples);
+std::vector<State> expand(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
 
-inline double calculate_total_heli_distance(const HeliState& heli_state, const ProblemData &problem) {
+/**
+ * Calculates the total distance traveled by a single helicopter in all its trips
+ * 
+ * Each trip starts at the home city, visits some villages, and may return to the home city
+ * @param heli_state The state of a single helicopter.
+ * @return The total distance traveled in kilometers.
+ */
+inline double calculate_total_heli_distance(const HelicopterPlan heli_state, const ProblemData &problem) {
     double total_distance = 0.0;
+
+    Point home_city = problem.cities[problem.helicopters[heli_state.helicopter_id-1].home_city_id-1];
+    Point curr_pos = home_city;
+    // Iterate through each trip undertaken by the helicopter
     for (const Trip &trip : heli_state.trips) {
-        total_distance += trip.distance_covered;
+        // Iterate through all the drops of the helicopter
+        for (const Drop &drop: trip.drops) {
+            total_distance += distance(curr_pos, problem.villages[drop.village_id-1].coords);
+            curr_pos = problem.villages[drop.village_id-1].coords;
+        }
+        total_distance += distance(curr_pos, home_city);
     }
+
     return total_distance;
 }
 

@@ -1,5 +1,5 @@
-#include "solver.h"
 #include <iostream>
+#include "solver.h"
 #include <chrono>
 // #include <cmath>
 
