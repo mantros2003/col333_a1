@@ -68,12 +68,13 @@ double value(State &s, const ProblemData &problem) {
  * @param s The state
  * @param v The village id
  */
-bool is_village_satisfied(const State &s, int v) {
-    VillageState state = s.villageStates[v-1];
-    int village_pop = state.vill.population;
+// Remove this function, use the bool help_needed
+// bool is_village_satisfied(const State &s, int v) {
+//     VillageState state = s.villageStates[v-1];
+//     int village_pop = state.vill.population;
 
-    return ((state.dry_food_rec + state.wet_food_rec) >= 9 * village_pop) & (state.other_food_rec >= village_pop);
-}
+//     return ((state.dry_food_rec + state.wet_food_rec) >= 9 * village_pop) & (state.other_food_rec >= village_pop);
+// }
 
 /**
  * Preprocesses the input and precomputes useful information
