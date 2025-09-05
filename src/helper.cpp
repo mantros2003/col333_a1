@@ -93,12 +93,11 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
             if (travel_dist <= heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
                 // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, problem.villages[v].population, heli.weight_capacity);
+                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, v, heli.weight_capacity);
                 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
-                child_state.villageStates[v].help_needed = false;
-
+                
                 // Initialize a new trip
                 /** TODO: Check the order of dry, perishable, other*/
                 Trip t;
@@ -108,11 +107,15 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                 Drop d = {v+1, (int)allocation.first.x, (int)allocation.first.y, (int)allocation.first.z};
                 t.drops = vector<Drop>(1, d);
                 child_state.heliStates[i].trips.push_back(t);
-
+                
                 // Modify the village's state
                 child_state.villageStates[v].dry_food_rec += allocation.first.x;
                 child_state.villageStates[v].wet_food_rec += allocation.first.y;
                 child_state.villageStates[v].other_food_rec += allocation.first.z;
+                // condition for village's needs
+                if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec > 0.9 * problem.villages[v].population){
+                    child_state.villageStates[v].help_needed = false;
+                }
                 child_state.g_cost = g(v,heli.home_city_id-1,heli_state.helicopter_id-1, problem, curr_state);
                 child_state.h_cost = h(heli_state.helicopter_id-1, v, problem, curr_state);
                 successors.insert(child_state);
