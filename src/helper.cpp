@@ -69,6 +69,7 @@ vector<vector<int>> preprocess(const ProblemData &problem) {
 
 // Function for single helicopter single village trip expand
 std::set<State> expand_single_heli(const State &curr_state, const ProblemData &problem) {
+
     std::set<State> successors;
 
     double values[3], weights[3];
@@ -77,15 +78,18 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
         weights[i] = problem.packages[i].weight;
     }
     // Store the villages that need more supplies
-    std::vector<int> villages_left;
-    for (size_t v = 0; v < problem.villages.size(); ++v) {
-        if (curr_state.villageStates[v].help_needed) { villages_left.push_back(v); }
-    }
     // Iterate through each helicopter
     for (size_t i = 0; i < problem.helicopters.size(); ++i) {
         HelicopterPlan heli_state = curr_state.heliStates[i];
         Helicopter heli = problem.helicopters[heli_state.helicopter_id-1];
-        Point home_city = problem.cities[problem.helicopters[heli_state.helicopter_id-1].home_city_id-1];
+        Point home_city = problem.cities[heli.home_city_id-1];
+        std::vector<int> villages_left;
+        for (size_t v = 0; v < problem.villages.size(); ++v) {
+            if (curr_state.villageStates[v].help_needed && \
+                2*distance(problem.villages[v].coords, home_city)<= min(heli.distance_capacity, heli_state.d_max_left)) { 
+                villages_left.push_back(v); 
+            }
+        }
 
         for (int v: villages_left) {
             // Check if heli can travel to the village and come back
