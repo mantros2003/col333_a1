@@ -137,7 +137,7 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                 
                 // Modify the village's state
                 // condition for village's needs
-                if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec > 8.1 * problem.villages[v].population){
+                if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec > 8.9 * problem.villages[v].population){
                     child_state.villageStates[v].help_needed = false;
                 }
                 child_state.g_cost = g(v,heli.home_city_id-1,heli_state.helicopter_id-1, problem, curr_state);

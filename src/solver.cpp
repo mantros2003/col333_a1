@@ -51,7 +51,7 @@ Solution solve(const ProblemData& problem) {
     Solution solution;
     int count = 0;
     // Initialize the start state
-    State root_state, current_state;
+    State temp_state, current_state;
     vector<HelicopterPlan> h_plan(problem.helicopters.size());
     cout<<"start_state : \n";
 
@@ -62,30 +62,21 @@ Solution solve(const ProblemData& problem) {
         h_plan[i].trips = temp_trip;
         h_plan[i].d_max_left = problem.d_max;
     }
-    root_state = {0,0, h_plan, village_state};
-    current_state = root_state;
+    current_state = {0,0, h_plan, village_state};
     set<State> frontier;
     frontier.insert(current_state);
-    while(count < 100 && !frontier.empty()){
+    while(count<5000 && !frontier.empty()){
         count++;
+        // set<State> expansion = expand_single_heli(current_state, problem);
+        // frontier.insert(expansion.begin(), next(expansion.begin(),h_plan.size()+1));
         frontier = expand_single_heli(current_state, problem);
         if (frontier.size()){
+            // temp_state = current_state;
             current_state = *frontier.begin();
-            // for (const auto& plan : current_state.heliStates) {
-            //     cout << plan.helicopter_id << " " << plan.trips.size() << "\n";
-            //     for (const auto& trip : plan.trips) {
-            //         cout << trip.dry_food_pickup << " " << trip.perishable_food_pickup << " " << trip.other_supplies_pickup << " " << trip.drops.size();
-            //         for (const auto& drop : trip.drops) {
-            //             cout<< " " << drop.village_id << " " << drop.dry_food << " " << drop.perishable_food << " " << drop.other_supplies;
-            //             cout<< " || "<<current_state.villageStates[drop.village_id-1].dry_food_rec<<"  "<<current_state.villageStates[drop.village_id-1].wet_food_rec<<"  "<<current_state.villageStates[drop.village_id-1].other_food_rec;
-            //         }
-            //         cout<< "\n";
-            //     }
-            //     cout<< -1 << "\n";
-            // }
         }
+        solution = current_state.heliStates;
     }
-    solution = current_state.heliStates;
+    cout<<"COUNT: "<<count<<endl;
     
     // --- END OF PLACEHOLDER LOGIC ---
 

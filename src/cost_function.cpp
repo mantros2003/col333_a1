@@ -97,6 +97,7 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
 
     double fuel_cost = 2*fixed_cost + 2*alpha*distance_travelled;
     double value_cost = solve_lp(problem_data, current_state,v_population, weight_cap).second;
+    if (value_cost-2*fuel_cost<=0) {return INT_MIN*1.0;}
     double prev_state_cost = current_state.g_cost;
     return prev_state_cost + value_cost - fuel_cost;
 }
