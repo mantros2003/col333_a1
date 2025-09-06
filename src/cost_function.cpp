@@ -1,5 +1,12 @@
 #include "structures.h"
 #include "lp_solver.h"
+#include "vector"
+
+#include <cmath>
+#include <limits>
+#include <utility>
+#include <algorithm>
+#include <stack>
 #include <iostream>
 #include <chrono>
 // #include <cmath>
@@ -86,6 +93,140 @@ double distance_travelled(int s, const vector<int>& v_idx, const ProblemData& P)
     return max(span2,anchor);
 }
 
+
+// Prim’s MST (O(n^2)) rooted at s. Returns {parent, total_weight}.
+// parent[s] == -1. Assumes complete Euclidean graph on P.
+inline std::pair<std::vector<int>, double>
+prim_mst(const std::vector<Point>& P, int s) {
+    const int n = (int)P.size();
+    const double INF = std::numeric_limits<double>::infinity();
+    std::vector<double> key(n, INF);
+    std::vector<int> parent(n, -1);
+    std::vector<char> in(n, 0);
+
+    key[s] = 0;
+    double total = 0;
+
+    for (int it = 0; it < n; ++it) {
+        int u = -1; double best = INF;
+        for (int i = 0; i < n; ++i)
+            if (!in[i] && key[i] < best) { best = key[i]; u = i; }
+        if (u == -1) break; // should not happen for complete graphs
+
+        in[u] = 1;
+        if (parent[u] != -1) total += distance(P[u], P[parent[u]]);
+
+        for (int v = 0; v < n; ++v) if (!in[v]) {
+            double w = distance(P[u], P[v]);
+            if (w < key[v]) { key[v] = w; parent[v] = u; }
+        }
+    }
+    return {parent, total};
+}
+
+// Build MST adjacency from parent array (undirected), with Euclidean weights.
+inline std::vector<std::vector<std::pair<int,double>>>
+build_mst_graph(const std::vector<Point>& P, const std::vector<int>& parent) {
+    const int n = (int)P.size();
+    std::vector<std::vector<std::pair<int,double>>> g(n);
+    for (int v = 0; v < n; ++v) if (parent[v] != -1) {
+        int u = parent[v];
+        double w = distance(P[u], P[v]);
+        g[u].push_back({v, w});
+        g[v].push_back({u, w});
+    }
+    return g;
+}
+
+// Tree distances from root s along the MST (sum of edge weights on unique paths).
+inline std::vector<double>
+mst_tree_distances_from_root(const vector<vector<pair<int,double>>>& g, int s) {
+    const int n = (int)g.size();
+    std::vector<double> dist(n, -1);
+    std::stack<int> st;
+    st.push(s);
+    dist[s] = 0;
+    while (!st.empty()) {
+        int u = st.top(); st.pop();
+        for (pair<int,double> i : g[u]) if (dist[i.first] < 0) {
+            int v = i.first;
+            double w = i.second;
+            dist[v] = dist[u] + w;
+            st.push(v);
+        }
+    }
+    return dist;
+}
+
+// Degree-based lower bound: 0.5 * sum over i of the two smallest incident distances from i.
+// Safe and usually stronger than plain MST weight. O(n^2).
+inline double
+degree_lower_bound(const std::vector<Point>& P) {
+    const int n = (int)P.size();
+    if (n <= 2) { // trivial cases
+        return (n <= 1) ? 0.0 : distance(P[0], P[1]) * 1.0;
+    }
+    const double INF = std::numeric_limits<double>::infinity();
+    double sum_two_smallest = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double a = INF, b = INF;
+        for (int j = 0; j < n; ++j) if (j != i) {
+            double d = distance(P[i], P[j]);
+            if (d < a) { b = a; a = d; }
+            else if (d < b) { b = d; }
+        }
+        sum_two_smallest += (a + b);
+    }
+    return 0.5 * sum_two_smallest;
+}
+
+struct Bounds {
+    double lower;       // lower bound on minimal distance
+    double upper;       // upper bound on minimal distance
+    double mst_weight;  // MST weight used
+    int    ub_endpoint; // index u that achieves the upper bound
+};
+
+// Compute tight, fast bounds on the minimal tour length where you start at s,
+// visit all points at least once, end anywhere, then add straight-line return to s.
+// Returns lower/upper bounds and the MST weight. O(n^2).
+inline Bounds
+tsp_min_distance_bounds(const ProblemData& problem,const vector<int>& v_idx, int s) {
+    vector<Point> P;
+    for (int v = 0; v < v_idx.size(); v++){
+        P.push_back(problem.villages[v].coords);
+    }
+    const int n = (int)P.size();
+    if (n == 0 || n == 1) {
+        return {0.0, 0.0, 0.0, (n ? s : -1)};
+    }
+    // 1) MST
+    pair<vector<int>, double> prim = prim_mst(P, s);
+    vector<int> parent = prim.first;
+    double W_mst = prim.second;
+    auto g = build_mst_graph(P, parent);
+
+    // 2) Tree distances from s
+    auto dist_tree = mst_tree_distances_from_root(g, s);
+
+    // 3) Lower bound
+    double LB_degree = degree_lower_bound(P);
+    double LB = std::max(W_mst, LB_degree);
+
+    // 4) Improved upper bound: walk MST (DFS) ending at u, then straight-line hop u->s
+    // Cost(candidate u): 2*W_mst - dist_tree[u] + euclid(P[u], P[s])
+    double UB = std::numeric_limits<double>::infinity();
+    int best_u = s;
+    for (int u = 0; u < n; ++u) {
+        if (dist_tree[u] < 0) continue; // disconnected should not occur
+        double cand = 2.0 * W_mst - dist_tree[u] + distance(P[u], P[s]);
+        if (cand < UB) { UB = cand; best_u = u; }
+    }
+
+    return {LB, UB, W_mst, best_u};
+}
+
+
 double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data,const State& current_state){
     // caluclate the cost from the start to this village.
     int fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
@@ -99,7 +240,7 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
     double value_cost = solve_lp(problem_data, current_state,v_population, weight_cap).second;
     if (value_cost-2*fuel_cost<=0) {return INT_MIN*1.0;}
     double prev_state_cost = current_state.g_cost;
-    return prev_state_cost + value_cost - fuel_cost;
+    return (prev_state_cost + value_cost - fuel_cost);
 }
 
 double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_data, const State& current_state){
@@ -118,6 +259,7 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
         other_count += village_states[i].other_food_rec;
     }
     double distance = distance_travelled(curr_village_idx, v_index, problem_data);
+    // double distance = tsp_min_distance_bounds(problem_data, v_index, curr_village_idx).lower;
     double fixed_cost, alpha;
     fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
     alpha = problem_data.helicopters[helicopter_index].alpha;
