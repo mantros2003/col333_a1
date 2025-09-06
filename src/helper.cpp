@@ -4,6 +4,7 @@
 #include <set>
 #include <random>
 #include "cost_function.h"
+#include "structures.h"
 #include "helper.h"
 
 // Need to change state
@@ -75,51 +76,72 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
         values[i] = problem.packages[i].value;
         weights[i] = problem.packages[i].weight;
     }
-
     // Store the villages that need more supplies
     std::vector<int> villages_left;
     for (size_t v = 0; v < problem.villages.size(); ++v) {
         if (curr_state.villageStates[v].help_needed) { villages_left.push_back(v); }
     }
-
     // Iterate through each helicopter
     for (size_t i = 0; i < problem.helicopters.size(); ++i) {
         HelicopterPlan heli_state = curr_state.heliStates[i];
         Helicopter heli = problem.helicopters[heli_state.helicopter_id-1];
         Point home_city = problem.cities[problem.helicopters[heli_state.helicopter_id-1].home_city_id-1];
-        double d_travelled = calculate_total_heli_distance(heli_state, problem);
 
         for (int v: villages_left) {
             // Check if heli can travel to the village and come back
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
-            if (travel_dist <= heli.distance_capacity && travel_dist <= problem.d_max - d_travelled) {
+            if (travel_dist <= heli.distance_capacity && travel_dist <= curr_state.heliStates[heli.id-1].d_max_left) {
                 // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, problem.villages[v].population, heli.weight_capacity);
-
+                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, v, heli.weight_capacity);
+                
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
-
+                child_state.heliStates[heli.id-1].d_max_left -= travel_dist;
                 // Initialize a new trip
                 /** TODO: Check the order of dry, perishable, other*/
+
+                int dry_rec = child_state.villageStates[v].dry_food_rec;
+                int wet_rec = child_state.villageStates[v].wet_food_rec;
+                int other_rec = child_state.villageStates[v].other_food_rec;
+                if (dry_rec + wet_rec + allocation.first.x + allocation.first.y > 9*problem.villages[v].population){
+                    if (dry_rec + wet_rec + allocation.first.y > 9*problem.villages[v].population){
+                        child_state.villageStates[v].wet_food_rec += 9*problem.villages[v].population-(dry_rec + wet_rec);
+                    }
+                    else {
+                        child_state.villageStates[v].wet_food_rec += allocation.first.y;
+                        child_state.villageStates[v].dry_food_rec += 9*problem.villages[v].population-(dry_rec + wet_rec);
+                    }
+                    
+                }
+                else {
+                    child_state.villageStates[v].dry_food_rec += allocation.first.x;
+                    child_state.villageStates[v].wet_food_rec += allocation.first.y;
+                }
+                if (child_state.villageStates[v].other_food_rec > problem.villages[v].population){
+                    child_state.villageStates[v].other_food_rec = problem.villages[v].population;
+                }
+                else {
+                    child_state.villageStates[v].other_food_rec += allocation.first.z;
+                }
                 Trip t;
                 t.dry_food_pickup = allocation.first.x;
                 t.perishable_food_pickup = allocation.first.y;
                 t.other_supplies_pickup = allocation.first.z;
-                Drop d = {v+1, (int)allocation.first.x, (int)allocation.first.y, (int)allocation.first.z};
+                Drop d = {v+1, child_state.villageStates[v].dry_food_rec - dry_rec, child_state.villageStates[v].wet_food_rec - wet_rec, child_state.villageStates[v].other_food_rec - other_rec};
                 t.drops = vector<Drop>(1, d);
                 child_state.heliStates[i].trips.push_back(t);
-
+                
                 // Modify the village's state
-                child_state.villageStates[v].dry_food_rec += allocation.first.x;
-                child_state.villageStates[v].wet_food_rec += allocation.first.y;
-                child_state.villageStates[v].other_food_rec += allocation.first.z;
+                // condition for village's needs
+                if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec > 8.1 * problem.villages[v].population){
+                    child_state.villageStates[v].help_needed = false;
+                }
                 child_state.g_cost = g(v,heli.home_city_id-1,heli_state.helicopter_id-1, problem, curr_state);
                 child_state.h_cost = h(heli_state.helicopter_id-1, v, problem, curr_state);
                 successors.insert(child_state);
             }
         }
     }
-
     return successors;
 }
 
@@ -165,7 +187,7 @@ std::vector<State> expand_single_heli_stochastic(const State &curr_state, const 
                 random_weights[num_samples-1] = 1.0;
                 for (double r_wt: random_weights) {
                     // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, problem.villages[v].population, heli.weight_capacity);
+                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, problem.villages[v].population, heli.weight_capacity);
 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;

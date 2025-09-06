@@ -5,6 +5,8 @@
 
 #include "structures.h"
 
+
+
 const double EPSILON = 1e-9;
 
 struct Point3d {
@@ -24,6 +26,6 @@ struct Constraint3d {
 double det3(double m[3][3]);
 Point3d intersection_pt(Plane3d p1, Plane3d p2, Plane3d p3);
 bool is_feasible(const Point3d &v, double n, double w_left, double w[3]);
-std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, int n, double w_left);
+std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int v_idx, double w_left);
 
 #endif // LP_SOLVER_H

@@ -3,12 +3,6 @@ Cuurently restricting problem to a single helicopter single village trip
 
 :TODO:  - Think about how to add stochasticity to the problem, especially in resource allocation as all possible combinations of resource allocation can;t be explored(?)
 
-        - [done] Update solve-lp to consider the constraints such that it consider the helpt needed, instead of hard 9n constraint, change it to 9n-help_provided, and n-help_provided for other supplies
+        - Currently we just visit a village until the sum of dry and wet supply is less than 90 percent of the need, and we do not check whether we actually fulfilled the requirements, change it to update the village's help requirement status only when fulfilling it's need is costly.
 
-        - [done] Refactor the code according to the changes in the struct
-
-        - decouple the expand function, output the vector of the index of the village
-
-        -[done] Rename the parent_state to current_state
-
-        - update the G cost function to add the lp solver function
+        - update the distance travelled by the helicopter in the state, we are not updating it right now

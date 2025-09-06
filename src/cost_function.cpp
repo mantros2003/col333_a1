@@ -1,4 +1,4 @@
-#include "helper.h"
+#include "structures.h"
 #include "lp_solver.h"
 #include <iostream>
 #include <chrono>
@@ -96,7 +96,7 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
 
     double fuel_cost = 2*fixed_cost + 2*alpha*distance_travelled;
-    double value_cost = solve_lp(problem_data, v_population, weight_cap).second;
+    double value_cost = solve_lp(problem_data, current_state,v_population, weight_cap).second;
     double prev_state_cost = current_state.g_cost;
     return prev_state_cost + value_cost - fuel_cost;
 }
@@ -111,9 +111,9 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
         if (village_states[i].help_needed){v_index.push_back(i);}
     }
     
-    double wet_count, other_count;
+    double wet_count = 0.0, other_count = 0.0;
     for (int i = 0; i < v_index.size(); i++){
-        wet_count += village_states[i].dry_food_rec + village_states[i].wet_food_rec;
+        wet_count += (village_states[i].dry_food_rec + village_states[i].wet_food_rec);
         other_count += village_states[i].other_food_rec;
     }
     double distance = distance_travelled(curr_village_idx, v_index, problem_data);
