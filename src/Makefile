@@ -10,7 +10,7 @@ CHECKER_EXEC = format_checker
 SRCS = main.cpp io_handler.cpp solver.cpp cost_function.cpp lp_solver.cpp helper.cpp
 
 # Source file for the checker
-CHECKER_SRCS = format_checker.cpp
+CHECKER_SRCS = format_checker.cpp 
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

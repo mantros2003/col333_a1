@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
         // 3. Write the solution to the output file
         writeOutputData(output_filename, solution);
         cout << "Successfully wrote solution to output file: " << output_filename << endl;
+        cout<<"––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––"<<endl;
 
     } catch (const runtime_error& e) {
         cerr << "An error occurred: " << e.what() << endl;
