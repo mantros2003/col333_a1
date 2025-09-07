@@ -25,7 +25,7 @@ struct Constraint3d {
 
 double det3(double m[3][3]);
 Point3d intersection_pt(Plane3d p1, Plane3d p2, Plane3d p3);
-bool is_feasible(const Point3d &v, double n, double w_left, double w[3]);
-std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int v_idx, double w_left);
+bool is_feasible(const Point3d &v, double meal_req, double other_req, double w_left, double w[3]);
+std::pair<Point3d, double> solve_lp(double (&w)[3], double (&v)[3], double meal_req, double other_req, double w_left);
 
 #endif // LP_SOLVER_H

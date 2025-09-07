@@ -65,7 +65,7 @@ Solution solve(const ProblemData& problem) {
     current_state = {0,0, h_plan, village_state};
     set<State> frontier;
     frontier.insert(current_state);
-    while(count<2800*problem.time_limit_minutes && !frontier.empty()){
+    while(count<3000*problem.time_limit_minutes && !frontier.empty()){
         count++;
         // set<State> expansion = expand_single_heli(current_state, problem);
         // frontier.insert(expansion.begin(), next(expansion.begin(),h_plan.size()+1));

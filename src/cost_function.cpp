@@ -236,8 +236,16 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
 
     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
 
+    double meal_req = 9.0*problem_data.villages[village_index].population - current_state.villageStates[village_index].dry_food_rec - current_state.villageStates[village_index].wet_food_rec;
+    double other_req = problem_data.villages[village_index].population - current_state.villageStates[village_index].other_food_rec;
+    double v[3], w[3];
+    for (int i = 0; i < 3; ++i) {
+        v[i] = problem_data.packages[i].value;
+        w[i] = problem_data.packages[i].weight;
+    }
+
     double fuel_cost = 2*fixed_cost + 2*alpha*distance_travelled;
-    double value_cost = solve_lp(problem_data, current_state,v_population, weight_cap).second;
+    double value_cost = solve_lp(w,v,meal_req,other_req, weight_cap).second;
     if (value_cost-2*fuel_cost<=0) {return INT_MIN*1.0;}
     double prev_state_cost = current_state.g_cost;
     return (prev_state_cost + value_cost - fuel_cost);
@@ -258,12 +266,26 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
         wet_count += (village_states[i].dry_food_rec + village_states[i].wet_food_rec);
         other_count += village_states[i].other_food_rec;
     }
+
+    // double v[3], w[3];
+    // for (int i = 0; i < 3; ++i) {
+    //     v[i] = problem_data.packages[i].value;
+    //     w[i] = problem_data.packages[i].weight;
+    // }
+
+    double max_trips = current_state.heliStates[helicopter_index].d_max_left/problem_data.helicopters[helicopter_index].distance_capacity;
+    double max_weight_load = max_trips*problem_data.helicopters[helicopter_index].weight_capacity;
     double distance = distance_travelled(curr_village_idx, v_index, problem_data);
+
+    // double meal_req = 9.0*problem_data.villages[curr_village_idx].population - current_state.villageStates[curr_village_idx].dry_food_rec - current_state.villageStates[curr_village_idx].wet_food_rec;
+    // double other_req = problem_data.villages[curr_village_idx].population - current_state.villageStates[curr_village_idx].other_food_rec;
+    // double value_cost = solve_lp(w, v,meal_req, other_req,max_weight_load).second;
     // double distance = tsp_min_distance_bounds(problem_data, v_index, curr_village_idx).lower;
+    
     double fixed_cost, alpha;
     fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
     alpha = problem_data.helicopters[helicopter_index].alpha;
-    double fuel_cost = fixed_cost + alpha * distance;
+    double fuel_cost = max_trips*fixed_cost + alpha * distance;
     double gross_value = problem_data.packages[1].value * wet_count + problem_data.packages[2].value * other_count;
     double h_cost = gross_value - fuel_cost;
 

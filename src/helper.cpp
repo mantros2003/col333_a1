@@ -96,7 +96,9 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
             if (travel_dist <= heli.distance_capacity && travel_dist <= curr_state.heliStates[heli.id-1].d_max_left) {
                 // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, v, heli.weight_capacity);
+                double meal_req = 9.0*problem.villages[v].population - curr_state.villageStates[v].dry_food_rec - curr_state.villageStates[v].wet_food_rec;
+                double other_req = problem.villages[v].population - curr_state.villageStates[v].other_food_rec;
+                std::pair<Point3d, double> allocation = solve_lp(weights, values, meal_req,other_req, heli.weight_capacity);
                 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
@@ -107,26 +109,11 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                 int dry_rec = child_state.villageStates[v].dry_food_rec;
                 int wet_rec = child_state.villageStates[v].wet_food_rec;
                 int other_rec = child_state.villageStates[v].other_food_rec;
-                if (dry_rec + wet_rec + allocation.first.x + allocation.first.y > 9*problem.villages[v].population){
-                    if (dry_rec + wet_rec + allocation.first.y > 9*problem.villages[v].population){
-                        child_state.villageStates[v].wet_food_rec += 9*problem.villages[v].population-(dry_rec + wet_rec);
-                    }
-                    else {
-                        child_state.villageStates[v].wet_food_rec += allocation.first.y;
-                        child_state.villageStates[v].dry_food_rec += 9*problem.villages[v].population-(dry_rec + wet_rec);
-                    }
-                    
-                }
-                else {
-                    child_state.villageStates[v].dry_food_rec += allocation.first.x;
-                    child_state.villageStates[v].wet_food_rec += allocation.first.y;
-                }
-                if (child_state.villageStates[v].other_food_rec > problem.villages[v].population){
-                    child_state.villageStates[v].other_food_rec = problem.villages[v].population;
-                }
-                else {
-                    child_state.villageStates[v].other_food_rec += allocation.first.z;
-                }
+
+                child_state.villageStates[v].wet_food_rec += min(9.0*problem.villages[v].population-(dry_rec + wet_rec), allocation.first.y);
+                child_state.villageStates[v].dry_food_rec += min(9.0* problem.villages[v].population-(dry_rec + child_state.villageStates[v].wet_food_rec), allocation.first.x);
+                child_state.villageStates[v].other_food_rec += min(1.0*problem.villages[v].population-other_rec, allocation.first.z);
+
                 Trip t;
                 t.dry_food_pickup = allocation.first.x;
                 t.perishable_food_pickup = allocation.first.y;
@@ -191,7 +178,9 @@ std::vector<State> expand_single_heli_stochastic(const State &curr_state, const 
                 random_weights[num_samples-1] = 1.0;
                 for (double r_wt: random_weights) {
                     // Allocate supplies
-                std::pair<Point3d, double> allocation = solve_lp(problem, curr_state, problem.villages[v].population, heli.weight_capacity);
+                double meal_req = 9.0*problem.villages[v].population - curr_state.villageStates[v].dry_food_rec - curr_state.villageStates[v].wet_food_rec;
+                double other_req = problem.villages[v].population - curr_state.villageStates[v].other_food_rec;
+                std::pair<Point3d, double> allocation = solve_lp(weights, values, meal_req,other_req, heli.weight_capacity);
 
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
