@@ -1,0 +1,7 @@
+Even though I/we have taken help from the following
+students and LLMs in terms of discussing ideas and coding practices, all my/our code is written by me/us.
+
+We used ChatGPT to check whether our code is written in a lousy way or it follows standards and whether efficiency can be improved or not. ChatGPT was never used for direct idea discussions or solution generation, rather used for figuring out whether there are any bugs. 
+
+Every single line of the code is written by me (Aryan - 2022ME111483) and my TeamMate (Swapnil - 2022ME21540). We are using A* search algorithm with an admissible heuristic function to search for the sub-optimal helicopter plans.
+

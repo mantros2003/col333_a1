@@ -53,7 +53,6 @@ double value(State &s, const ProblemData &problem) {
 vector<vector<int>> preprocess(const ProblemData &problem) {
     int num_cities = problem.cities.size();
     int num_villages = problem.villages.size();
-    int num_helicopters = problem.helicopters.size();
 
     vector<vector<int>> reachable_by_heli(num_cities, vector<int>());
     for (auto &heli: problem.helicopters) {

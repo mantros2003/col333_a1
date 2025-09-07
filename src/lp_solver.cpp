@@ -141,12 +141,10 @@ std::pair<Point3d, double> solve_lp(double (&w)[3], double (&v)[3], double meal_
     }
 
     Point3d best_solution;
-    bool found_feasible = false;
     double best_objective = -1.0;
 
     for (const Point3d &candidate : candidates) {
         if (is_feasible(candidate, meal_req, other_req, w_left, w)) {
-            found_feasible = true;
             double current_z = v[0] * candidate.x + v[1] * candidate.y + v[2] * candidate.z;
             if (current_z > best_objective) {
                 best_objective = current_z;
