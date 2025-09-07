@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include "lp_solver.h"
 
@@ -45,14 +46,14 @@ Point3d intersection_pt(Plane3d p1, Plane3d p2, Plane3d p3) {
     return p;
 }
 
-bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
+bool is_feasible(const Point3d &v, const double coeff_1, const double coeff_2, double w_left, double w[3]) {
     if (v.x < -EPSILON || v.y < -EPSILON || v.z < -EPSILON) {
         return false;
-    } else if (v.x + v.y > 9 * n + EPSILON) {
+    } else if (v.x + v.y > coeff_1 + EPSILON) {
         return false;
-    } else if (v.z > n + EPSILON) {
+    } else if (v.z > coeff_2 + EPSILON) {
         return false;
-    } else if (w[0] * v.x + w[1] * v.y + w[2] * v.z > w_left + EPSILON) {
+    } else if ((w[0] * v.x) + (w[1] * v.y) + (w[2] * v.z) > w_left + EPSILON) {
         return false;
     }
 
@@ -63,104 +64,124 @@ bool is_feasible(const Point3d &v, double n, double w_left, double w[3]) {
  * Solve the LP by iterating throught all the hardcoded vertices of the polytope
  */
 std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State& current_state, int v_idx, double w_left) {
-    /** 
-        n = population
-    */
     int n = problem_data.villages[v_idx].population;
     int wet = current_state.villageStates[v_idx].wet_food_rec;
     int dry = current_state.villageStates[v_idx].dry_food_rec;
     int other = current_state.villageStates[v_idx].other_food_rec;
-    std::vector<Point3d> candidates;
+
+    const double coeff_1 = (9*n) - wet - dry, coeff_2 = n - other;
+    
+    std::vector<Point3d> candidates = std::vector<Point3d>();
     double v[3], w[3];
     for (int i = 0; i < 3; ++i) {
         v[i] = problem_data.packages[i].value;
         w[i] = problem_data.packages[i].weight;
     }
+
+    // std::cout << "Problem Description:" << std::endl;
+    // std::cout << "Dry food rec: " << dry << std::endl;
+    // std::cout << "Wet food rec: " << wet << std::endl;
+    // std::cout << "Other rec: " << other << std::endl;
+
+    // for (int i = 0; i < 3; ++i) {
+    //     std::cout << i << " " << w[i] << " " << v[i] << std::endl;
+    // }
+
     // 1. Intersection of a1=0, a2=0, a3=0
     candidates.push_back({0, 0, 0});
 
     // 2. Intersection of a1=0, a2=0, a3=n-other
-    candidates.push_back({0, 0, (n-other)*1.0});
+    if (coeff_2 >= 0) { candidates.push_back({0, 0, coeff_2}); }
 
     // 3. Intersection of a1=0, a2=0, w_3a_3=w'
     if (std::abs(w[2]) > EPSILON) {
-        candidates.push_back({0, 0, w_left / w[2]});
+        if (w_left <= w[2] * coeff_2) { candidates.push_back({0, 0, w_left / w[2]}); }
     }
     
     // 4. Intersection of a1=0, a3=0, a2=(9n-wet-dry)
-    candidates.push_back({0, 9.0*n-wet-dry, 0});
+    if (coeff_1 >= 0) { candidates.push_back({0, coeff_1, 0}); }
     
     // 5. Intersection of a1=0, a3=0, w_2a_2=w'
     if (std::abs(w[1]) > EPSILON) {
-        candidates.push_back({0, w_left / w[1], 0});
+        if (w_left <= w[1] * coeff_1) { candidates.push_back({0, w_left / w[1], 0}); }
     }
 
     // 6. Intersection of a2=0, a3=0, a1=(9n-wet-dry)
-    candidates.push_back({9.0*n-wet-dry, 0, 0});
+    if (coeff_1 >= 0) { candidates.push_back({coeff_1, 0, 0}); }
     
     // 7. Intersection of a2=0, a3=0, w_1a_1=w'
     if (std::abs(w[0]) > EPSILON) {
-        candidates.push_back({w_left / w[0], 0, 0});
+        if (w_left <= w[0] * coeff_1) { candidates.push_back({w_left / w[0], 0, 0}); }
     }
 
     // 8. Intersection of a1=0, a3=n-other, a2=(9n-wet-dry)
-    candidates.push_back({0, 9.0*n-wet-dry, 1.0*(n-other)});
+    if (coeff_1 >= 0) { candidates.push_back({0, coeff_1, coeff_2}); }
 
     // 9. Intersection of a1=0, a2=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[2]) > EPSILON) {
-        double a3 = (w_left - 9*n*w[1]) / w[2];
-        candidates.push_back({0, 9.0*n-wet-dry, a3});
+    if (std::abs(w[2]) > EPSILON && coeff_1 >= 0) {
+        double a3 = (w_left - coeff_1*w[1]) / w[2];
+        if (a3 >= 0 && a3 <= coeff_2) { candidates.push_back({0, coeff_1, a3}); }
     }
 
     // 10. Intersection of a2=0, a3=n-other, a1=(9n-wet-dry)
-    candidates.push_back({9.0*n-wet-dry, 0, 1.0*(n-other)});
+    if (coeff_1 >= 0 && coeff_2 >= 0) { candidates.push_back({coeff_1, 0, coeff_2}); }
 
     // 11. Intersection of a2=0, a1=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[2]) > EPSILON) {
-        double a3 = (w_left - 9*n*w[0]) / w[2];
-        candidates.push_back({9.0*n-wet-dry, 0, a3});
+    if (std::abs(w[2]) > EPSILON && coeff_1 >= 0) {
+        double a3 = (w_left - coeff_1*w[0]) / w[2];
+        if (a3 >= 0 && a3 <= coeff_2) { candidates.push_back({coeff_1, 0, a3}); }
     }
     
     // 12. Intersection of a1=0, a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[1]) > EPSILON) {
-        double a2 = (w_left - n*w[2]) / w[1];
-        candidates.push_back({0, a2, 1.0*(n-other)});
+    if (std::abs(w[1]) > EPSILON && coeff_2 >= 0) {
+        double a2 = (w_left - coeff_2*w[2]) / w[1];
+        if (a2 >= 0 && a2 <= coeff_1) { candidates.push_back({0, a2, coeff_2}); }
     }
     
     // 13. Intersection of a2=0, a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[0]) > EPSILON) {
-        double a1 = (w_left - (n-other)*w[2]) / w[0];
-        candidates.push_back({a1, 0, 1.0*(n-other)});
+    if (std::abs(w[0]) > EPSILON && coeff_2 >= 0) {
+        double a1 = (w_left - coeff_2*w[2]) / w[0];
+        if (a1 >= 0 && a1 <= coeff_1) { candidates.push_back({a1, 0, coeff_2}); }
     }
 
     // 14. Intersection of a3=0, a1+a2=(9n-wet-dry), w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[1] - w[0]) > EPSILON) {
-        double a2 = (w_left - (9*n-dry-wet)*w[0]) / (w[1] - w[0]);
-        double a1 = (9*n-dry-wet) - a2;
-        candidates.push_back({a1, a2, 0});
+    if (std::abs(w[1] - w[0]) > EPSILON && coeff_1 >= 0) {
+        double a2 = (w_left - coeff_1*w[0]) / (w[1] - w[0]);
+        double a1 = coeff_1 - a2;
+        if (a1 >= 0 && a2 >= 0) { candidates.push_back({a1, a2, 0}); }
     }
 
     // 15. Intersection of a1+a2=(9n-wet-dry), a3=n-other, w_1a_1+w_2a_2+w_3a_3=w'
-    if (std::abs(w[1] - w[0]) > EPSILON) {
-        double a2 = (w_left - (n-other)*w[2] - (9*n-wet-dry)*w[0]) / (w[1] - w[0]);
-        double a1 = (9*n-dry-wet) - a2;
-        candidates.push_back({a1, a2, 1.0*(n-other)});
+    if (std::abs(w[1] - w[0]) > EPSILON && coeff_1 >= 0 && coeff_2 >= 0) {
+        double a2 = (w_left - coeff_2*w[2]) - (coeff_1*w[0]) / (w[1] - w[0]);
+        double a1 = coeff_1 - a2;
+        if (a1 >= 0 && a2 >= 0) { candidates.push_back({a1, a2, coeff_2}); }
     }
 
-    Point3d best_solution;
+    Point3d best_solution = {0.0, 0.0, 0.0};
     bool found_feasible = false;
-    double best_objective = -1.0;
+    double best_objective = 0.0;
 
     for (const Point3d &candidate : candidates) {
-        if (is_feasible(candidate, n, w_left, w)) {
+        if (is_feasible(candidate, coeff_1, coeff_2, w_left, w)) {
             found_feasible = true;
-            double current_z = v[0] * candidate.x + v[1] * candidate.y + v[2] * candidate.z;
+            double current_z = (v[0] * candidate.x) + (v[1] * candidate.y) + (v[2] * candidate.z);
             if (current_z > best_objective) {
                 best_objective = current_z;
                 best_solution = {candidate.x, candidate.y, candidate.z};
             }
         }
     }
+
+    // std::cout << "Candidates" << std::endl;
+    // std::cout << "==========" << std::endl;
+
+    // for (auto &c: candidates) {
+    //     std::cout << "\t" << c.x << " " << c.y << " " << c.z << std::endl;
+    // }
+
+    // std::cout << "Found feasible: " << found_feasible << std::endl;
+    // if (found_feasible) std::cout << best_solution.x << " " << best_solution.y << " " << best_solution.z << std::endl;
 
     return std::pair<Point3d, double>(best_solution, best_objective);
 }

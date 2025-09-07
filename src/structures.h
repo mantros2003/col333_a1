@@ -90,17 +90,22 @@ struct State {
     bool operator<(const State& other) const {
         const double f  = g_cost + h_cost;
         const double fo = other.g_cost + other.h_cost;
-        if (f < fo)  return false;
-        if (f > fo)  return true;
-        // tiebreakers so ordering is strict and stable
-        if (g_cost < other.g_cost) return false;
-        if (g_cost > other.g_cost) return true;
-        // if (heliStates.size() < other.heliStates.size()) return true;
-        // if (heliStates.size() > other.heliStates.size()) return false;
-        // if (villageStates.size() < other.villageStates.size()) return true;
-        // if (villageStates.size() > other.villageStates.size()) return false;
-        return false; // equal for ordering purposes
-    }
+        if (abs(f - fo) > 1e-9) { // Use a tolerance for float comparison
+            return f > fo;
+        }
+
+        if (abs(g_cost - other.g_cost) > 1e-9) {
+            return g_cost > other.g_cost;
+        }
+
+        // Tertiary: break ties using heliStates length
+        if (heliStates.size() != other.heliStates.size()) {
+            return heliStates.size() < other.heliStates.size();
+        }
+
+        // Last resort: stable ordering by memory address
+        return std::less<const State*>()(this, &other);
+        }
 };
 
 using Solution = vector<HelicopterPlan>;

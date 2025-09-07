@@ -86,18 +86,21 @@ double distance_travelled(int s, const vector<int>& v_idx, const ProblemData& P)
     return max(span2,anchor);
 }
 
-double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data,const State& current_state){
+double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, const State& current_state){
     // caluclate the cost from the start to this village.
     int fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
     int alpha = problem_data.helicopters[helicopter_index].alpha;
     double distance_travelled = distance(problem_data.villages[village_index].coords, problem_data.cities[city_index]);
-    int v_population = problem_data.villages[village_index].population;
+    // int v_population = problem_data.villages[village_index].population;
 
     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
 
-    double fuel_cost = 2*fixed_cost + 2*alpha*distance_travelled;
-    double value_cost = solve_lp(problem_data, current_state,v_population, weight_cap).second;
+    double fuel_cost = fixed_cost + 2*alpha*distance_travelled;
+    auto alloc_ = solve_lp(problem_data, current_state, village_index, weight_cap);
+    double value_cost = alloc_.second;
     double prev_state_cost = current_state.g_cost;
+    // cout << "alloc: " << alloc_.first.x << " " << alloc_.first.y << " " << alloc_.first.z << endl;
+    // cout << "g: " << value_cost << ' ' << fuel_cost << endl;
     return prev_state_cost + value_cost - fuel_cost;
 }
 
@@ -108,7 +111,7 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
     // vector<Village> villages = problem_data.villages;
     
     for (int i = 0; i < village_states.size(); i++){
-        if (village_states[i].help_needed){v_index.push_back(i);}
+        if (village_states[i].help_needed) { v_index.push_back(i); }
     }
     
     double wet_count = 0.0, other_count = 0.0;
@@ -126,6 +129,3 @@ double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_
 
     return h_cost;
 }
-
-
-

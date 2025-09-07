@@ -17,9 +17,8 @@ inline double calculate_total_heli_distance(const HelicopterPlan heli_state, con
 double value(State &s, const ProblemData &problem);
 std::vector<std::vector<int>> preprocess(const ProblemData &problem);
 
-State expand(State &s, const ProblemData &problem);
 std::set<State> expand_single_heli(const State &curr_state, const ProblemData &problem);
-std::vector<State> expand_single_heli_stochastic(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State), int num_samples);
+std::set<State> expand_single_heli_stochastic(const State &curr_state, const ProblemData &problem, int num_samples, std::mt19937&);
 std::vector<State> expand(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
 
 /**
