@@ -76,7 +76,8 @@ Solution solve(const ProblemData& problem) {
         }
         solution = current_state.heliStates;
     }
-    cout<<"COUNT: "<<count<<endl;
+    
+    cout<<"COUNT: "<<count<<" || G_cost: "<<current_state.g_cost<<endl;
     
     // --- END OF PLACEHOLDER LOGIC ---
 

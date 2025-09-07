@@ -85,7 +85,7 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
         std::vector<int> villages_left;
         for (size_t v = 0; v < problem.villages.size(); ++v) {
             if (curr_state.villageStates[v].help_needed && \
-                2*distance(problem.villages[v].coords, home_city)<= min(heli.distance_capacity, heli_state.d_max_left)) { 
+                2*distance(home_city,problem.villages[v].coords)<= min(heli.distance_capacity, heli_state.d_max_left)) { 
                 villages_left.push_back(v); 
             }
         }
@@ -102,6 +102,7 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                 // Duplicate parent state, add a trip and then modify the village's state
                 State child_state = curr_state;
                 child_state.heliStates[heli.id-1].d_max_left -= travel_dist;
+                // cout<<"heli "<<heli.id<<" distance left: "<<child_state.heliStates[heli.id-1].d_max_left<<endl;
                 // Initialize a new trip
                 /** TODO: Check the order of dry, perishable, other*/
 
