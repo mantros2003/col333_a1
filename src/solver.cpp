@@ -243,7 +243,7 @@ Solution solve_beam_bfs(const ProblemData& problem) {
 Solution solve_beam_dfs(const ProblemData& problem) {
     cout << "Starting solver..." << endl;
 
-    constexpr long BEAM_WIDTH = 100000;
+    constexpr long BEAM_WIDTH = 10000;
 
     // This leaves time for file I/O and other wrap-up tasks.
     const auto safety_margin = chrono::milliseconds(200);
@@ -268,6 +268,7 @@ Solution solve_beam_dfs(const ProblemData& problem) {
         h_plan[i].helicopter_id = i+1;
         h_plan[i].trips = vector<Trip>();
         h_plan[i].d_max_left = problem.d_max;
+        h_plan[i].in_trip = false;
     }
     root_state = {0, 0, h_plan, village_state};
     current_state = root_state;
@@ -292,13 +293,15 @@ Solution solve_beam_dfs(const ProblemData& problem) {
 
         current_state = *frontier.begin();
         frontier.erase(frontier.begin());
-        if (current_state.g_cost + current_state.h_cost > best_f) {
+        bool trip_complete = true;
+        for (auto &heli: current_state.heliStates) { trip_complete &= (!heli.in_trip); }
+        if (trip_complete && current_state.g_cost + current_state.h_cost > best_f) {
             best_state = current_state;
             best_f = current_state.g_cost + current_state.h_cost;
         }
 
         // cout << current_state.g_cost + current_state.h_cost << endl;
-        set<State> sucessors = expand_single_heli_stochastic(current_state, problem, 1, gen);
+        set<State> sucessors = expand(current_state, problem, 1, gen);
         frontier.merge(sucessors);
     
         if (frontier.size() > BEAM_WIDTH) {

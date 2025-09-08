@@ -10,3 +10,5 @@ Cuurently restricting problem to a single helicopter single village trip
         - Think about adding 2 village LP
 
         - Substitute every VLA with vector
+
+        - Investigate the effect of beam width

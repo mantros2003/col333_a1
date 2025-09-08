@@ -20,7 +20,7 @@ std::vector<std::vector<int>> preprocess(const ProblemData &problem);
 
 std::set<State> expand_single_heli(const State &curr_state, const ProblemData &problem);
 std::set<State> expand_single_heli_stochastic(const State &curr_state, const ProblemData &problem, int num_samples, std::mt19937&);
-std::vector<State> expand(const State &curr_state, const ProblemData &problem, double (*g)(State), double (*h)(State));
+std::set<State> expand(const State&, const ProblemData&, int, std::mt19937&);
 
 /**
  * Calculates the total distance traveled by a single helicopter in all its trips

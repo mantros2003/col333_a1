@@ -74,7 +74,25 @@ double distance_travelled(int s, const vector<int>& v_idx, const ProblemData& P)
     return max(span2,anchor);
 }
 
-double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, const State& current_state, double rnd_weight){
+// double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, const State& current_state, double rnd_weight){
+//     // caluclate the cost from the start to this village.
+//     double fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
+//     double alpha = problem_data.helicopters[helicopter_index].alpha;
+//     double distance_travelled = distance(problem_data.villages[village_index].coords, problem_data.cities[city_index]);
+//     // int v_population = problem_data.villages[village_index].population;
+
+//     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
+
+//     double fuel_cost = fixed_cost + (2 * alpha * distance_travelled);
+//     auto alloc_ = solve_lp(problem_data, current_state, village_index, weight_cap*rnd_weight);
+//     double value_cost = alloc_.second;
+//     double prev_state_cost = current_state.g_cost;
+//     // cout << "alloc: " << alloc_.first.x << " " << alloc_.first.y << " " << alloc_.first.z << endl;
+//     // cout << "g: " << value_cost << ' ' << fuel_cost << endl;
+//     return prev_state_cost + value_cost - fuel_cost;
+// }
+
+double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, const State& current_state, double r_wt) {
     // caluclate the cost from the start to this village.
     double fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
     double alpha = problem_data.helicopters[helicopter_index].alpha;
@@ -83,13 +101,28 @@ double g(int village_index, int city_index, int helicopter_index, const ProblemD
 
     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
 
-    double fuel_cost = fixed_cost + (2 * alpha * distance_travelled);
-    auto alloc_ = solve_lp(problem_data, current_state, village_index, weight_cap*rnd_weight);
-    double value_cost = alloc_.second;
+    double meal_req = 9.0*problem_data.villages[village_index].population - current_state.villageStates[village_index].dry_food_rec - current_state.villageStates[village_index].wet_food_rec;
+    double other_req = problem_data.villages[village_index].population - current_state.villageStates[village_index].other_food_rec;
+    double v[3], w[3];
+    for (int i = 0; i < 3; ++i) {
+        v[i] = problem_data.packages[i].value;
+        w[i] = problem_data.packages[i].weight;
+    }
+
+    double fuel_cost = fixed_cost + 2*alpha*distance_travelled;
+    double value_cost = solve_lp(w,v,meal_req,other_req, weight_cap * r_wt).second;
     double prev_state_cost = current_state.g_cost;
-    // cout << "alloc: " << alloc_.first.x << " " << alloc_.first.y << " " << alloc_.first.z << endl;
-    // cout << "g: " << value_cost << ' ' << fuel_cost << endl;
-    return prev_state_cost + value_cost - fuel_cost;
+    return (prev_state_cost + value_cost - fuel_cost);
+}
+
+double g(const ProblemData &p, const State &curr_state, int heli_id, Point start, Point end, double curr_trip_value, bool at_home) {
+    double current_value = curr_state.g_cost;
+
+    double F = p.helicopters[heli_id].fixed_cost;
+    double alpha = p.helicopters[heli_id].alpha;
+    double dist = distance(start, end);
+
+    return current_value + curr_trip_value - ((at_home ? F : 0) + (alpha * dist));
 }
 
 double h(int helicopter_index, int curr_village_idx, const ProblemData& problem_data, const State& current_state){

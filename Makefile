@@ -35,6 +35,7 @@ $(EXEC): $(OBJS) | $(BUILD_DIR)
 
 # Rule to link the checker program.
 # It depends on its own object file, the shared io_handler.o, and the build directory.
+
 $(CHECKER_EXEC): $(CHECKER_OBJS) $(IO_HANDLER_OBJ) | $(BUILD_DIR)
 	@echo "Linking executable: $@"
 	$(CXX) $(CXXFLAGS) -o $@ $^

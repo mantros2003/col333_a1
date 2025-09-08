@@ -62,12 +62,14 @@ struct Trip {
     int dry_food_pickup;
     int perishable_food_pickup;
     int other_supplies_pickup;
+    double w_cap_left;
     vector<Drop> drops;
 };
 
 struct HelicopterPlan {
     int helicopter_id;
     double d_max_left;
+    bool in_trip;
     vector<Trip> trips;
 };
 
