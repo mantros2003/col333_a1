@@ -165,7 +165,7 @@ std::pair<Point3d, double> solve_lp(const ProblemData& problem_data, const State
     for (const Point3d &candidate : candidates) {
         if (is_feasible(candidate, coeff_1, coeff_2, w_left, w)) {
             found_feasible = true;
-            double current_z = (v[0] * candidate.x) + (v[1] * candidate.y) + (v[2] * candidate.z);
+            double current_z = (v[0] * (int)candidate.x) + (v[1] * (int)candidate.y) + (v[2] * (int)(candidate.z));
             if (current_z > best_objective) {
                 best_objective = current_z;
                 best_solution = {candidate.x, candidate.y, candidate.z};

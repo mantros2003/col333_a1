@@ -3,6 +3,7 @@
 #include <queue>
 #include <set>
 #include <random>
+#include <cassert>
 #include "cost_function.h"
 #include "structures.h"
 #include "expand.h"
@@ -166,7 +167,7 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                     child_state.villageStates[v].help_needed = false;
                 }
 
-                child_state.g_cost = g(v, heli.home_city_id-1, heli_state.helicopter_id-1, problem, curr_state);
+                child_state.g_cost = g(v, heli.home_city_id-1, heli_state.helicopter_id-1, problem, curr_state, 1.0);
                 // child_state.h_cost = h(heli_state.helicopter_id-1, v, problem, curr_state);
                 child_state.h_cost = 0;
 
@@ -202,8 +203,8 @@ std::set<State> expand_single_heli_stochastic(const State &curr_state, const Pro
 
         for (int v: villages_left) {
             // Check if heli can travel to the village and come back
-            double travel_dist = 2*distance(home_city, problem.villages[v].coords);
-            if ((travel_dist <= heli.distance_capacity) && (travel_dist <= heli_state.d_max_left)) {
+            double travel_dist = 2 * distance(home_city, problem.villages[v].coords);
+            if ((travel_dist < (heli.distance_capacity + EPSILON)) && (travel_dist < (heli_state.d_max_left + EPSILON))) {
                 // Choose num_samples-1 random numbers in range 0.2 to 0.8
                 // And multiply with helicopter weight capacity to add stochasticity
                 // Add weight 1.0
@@ -248,11 +249,20 @@ std::set<State> expand_single_heli_stochastic(const State &curr_state, const Pro
                         child_state.villageStates[v].help_needed = false;
                     }
 
-                    child_state.g_cost = g(v, heli.home_city_id-1, heli_state.helicopter_id-1, problem, curr_state);
+                    child_state.g_cost = g(v, heli.home_city_id-1, heli_state.helicopter_id-1, problem, curr_state, r_wt);
                     // child_state.h_cost = h(heli_state.helicopter_id-1, v, problem, curr_state);
                     child_state.h_cost = 0;
 
                     successors.insert(child_state);
+
+                    {
+                        Point home_city = problem.cities[heli.home_city_id - 1];
+                        int v_id = child_state.heliStates[i].trips.back().drops[0].village_id - 1;
+                        double d = 2 * distance(home_city, problem.villages[v_id].coords);
+
+                        assert(d <= heli.distance_capacity + 1e-6 &&
+                            "Violation: trip exceeds helicopter's distance capacity!");
+                    }
                 }
             }
         }

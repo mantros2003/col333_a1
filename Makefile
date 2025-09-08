@@ -8,7 +8,7 @@ EXEC = $(BUILD_DIR)/main
 CHECKER_EXEC = $(BUILD_DIR)/format_checker
 
 # --- Source Files ---
-_SRCS = main.cpp io_handler.cpp solver.cpp cost_function.cpp lp_solver.cpp helper.cpp
+_SRCS = main.cpp io_handler.cpp solver.cpp cost_function.cpp lp_solver.cpp expand.cpp
 _CHECKER_SRCS = format_checker.cpp
 
 # Prepend the source directory path to each source file name.
