@@ -25,7 +25,9 @@ int main(int argc, char* argv[]) {
         auto deadline = start_time + allowed_duration;
 
         // 2. Solve the problem
-        Solution solution = solve(problem);
+        Solution solution = solve_beam_dfs(problem);
+
+        cout << "solve exited!" << endl;
         
         auto end_time = chrono::steady_clock::now();
         auto elapsed = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);

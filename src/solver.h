@@ -9,6 +9,9 @@
  * * @param problem A const reference to the parsed problem data.
  * @return A Solution object containing the plan for all helicopters.
  */
-Solution solve(const ProblemData& problem);
+Solution solve_heuristic(const ProblemData& problem);
+Solution solve_dfs(const ProblemData& problem);
+Solution solve_beam_bfs(const ProblemData& problem);
+Solution solve_beam_dfs(const ProblemData& problem);
 
 #endif // SOLVER_H

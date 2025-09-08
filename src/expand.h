@@ -1,9 +1,10 @@
-#ifndef HELPER_H
-#define HELPER_H
+#ifndef EXPAND_H
+#define EXPAND_H
 
 #include <vector>
 #include <queue>
 #include <set>
+#include <random>
 #include "structures.h"
 #include "lp_solver.h"
 
@@ -46,4 +47,4 @@ inline double calculate_total_heli_distance(const HelicopterPlan heli_state, con
     return total_distance;
 }
 
-#endif // HELPER_H
+#endif // EXPAND_H

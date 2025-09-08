@@ -5,18 +5,6 @@
 // #include <cmath>
 
 using namespace std;
-// You can add any helper functions or classes you need here.
-
-/**
- * @brief The main function to implement your search/optimization algorithm.
- * * This is a placeholder implementation. It creates a simple, likely invalid,
- * plan to demonstrate how to build the Solution object. 
- * * TODO: REPLACE THIS ENTIRE FUNCTION WITH YOUR ALGORITHM.
- */
-
-// double dis(Point a, Point b){
-//     return sqrt(pow((a.x-b.x),2) + pow((a.y-b.y),2));
-// }
 
 // Project point p onto unit direction (cx, sy) and return scalar coordinate.
 double proj(const Point& p, double cx, double sy) {
@@ -88,14 +76,14 @@ double distance_travelled(int s, const vector<int>& v_idx, const ProblemData& P)
 
 double g(int village_index, int city_index, int helicopter_index, const ProblemData& problem_data, const State& current_state){
     // caluclate the cost from the start to this village.
-    int fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
-    int alpha = problem_data.helicopters[helicopter_index].alpha;
+    double fixed_cost = problem_data.helicopters[helicopter_index].fixed_cost;
+    double alpha = problem_data.helicopters[helicopter_index].alpha;
     double distance_travelled = distance(problem_data.villages[village_index].coords, problem_data.cities[city_index]);
     // int v_population = problem_data.villages[village_index].population;
 
     double weight_cap = problem_data.helicopters[helicopter_index].weight_capacity;
 
-    double fuel_cost = fixed_cost + 2*alpha*distance_travelled;
+    double fuel_cost = fixed_cost + (2 * alpha * distance_travelled);
     auto alloc_ = solve_lp(problem_data, current_state, village_index, weight_cap);
     double value_cost = alloc_.second;
     double prev_state_cost = current_state.g_cost;

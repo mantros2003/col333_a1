@@ -5,7 +5,7 @@
 #include <random>
 #include "cost_function.h"
 #include "structures.h"
-#include "helper.h"
+#include "expand.h"
 
 // Need to change state
 // States need to store order and values of drops to implement capping logic
@@ -162,7 +162,7 @@ std::set<State> expand_single_heli(const State &curr_state, const ProblemData &p
                 child_state.villageStates[v].other_food_rec += allocation.first.z;
 
                 if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec >= 9 * problem.villages[v].population &&
-                    child_state.villageStates[v].other_food_rec >= problem.villages[v].population){
+                    child_state.villageStates[v].other_food_rec >= problem.villages[v].population) {
                     child_state.villageStates[v].help_needed = false;
                 }
 
@@ -198,12 +198,12 @@ std::set<State> expand_single_heli_stochastic(const State &curr_state, const Pro
     for (size_t i = 0; i < problem.helicopters.size(); ++i) {
         HelicopterPlan heli_state = curr_state.heliStates[i];
         Helicopter heli = problem.helicopters[heli_state.helicopter_id-1];
-        Point home_city = problem.cities[problem.helicopters[heli_state.helicopter_id-1].home_city_id-1];
+        Point home_city = problem.cities[heli.home_city_id-1];
 
         for (int v: villages_left) {
             // Check if heli can travel to the village and come back
             double travel_dist = 2*distance(home_city, problem.villages[v].coords);
-            if (travel_dist <= heli.distance_capacity && travel_dist <= curr_state.heliStates[heli.id-1].d_max_left) {
+            if ((travel_dist <= heli.distance_capacity) && (travel_dist <= heli_state.d_max_left)) {
                 // Choose num_samples-1 random numbers in range 0.2 to 0.8
                 // And multiply with helicopter weight capacity to add stochasticity
                 // Add weight 1.0
@@ -243,8 +243,8 @@ std::set<State> expand_single_heli_stochastic(const State &curr_state, const Pro
                     child_state.villageStates[v].wet_food_rec += allocation.first.y;
                     child_state.villageStates[v].other_food_rec += allocation.first.z;
 
-                    if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec >= 9 * problem.villages[v].population &&
-                        child_state.villageStates[v].other_food_rec >= problem.villages[v].population){
+                    if (child_state.villageStates[v].dry_food_rec + child_state.villageStates[v].wet_food_rec >= (9 * problem.villages[v].population - EPSILON) &&
+                        child_state.villageStates[v].other_food_rec >= (problem.villages[v].population - EPSILON)) {
                         child_state.villageStates[v].help_needed = false;
                     }
 

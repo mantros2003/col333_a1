@@ -112,8 +112,8 @@ double verifyAndCalculateScore(const string& input_file_path, const string& outp
             }
 
             if (total_d_dropped > d || total_p_dropped > p || total_o_dropped > o) {
-                 cout << "*** WARNING: Heli " << helicopter_id << ", Trip " << i + 1 << " drops more packages than picked up." << endl;
-                 constraint_violated = true;
+                cout << "*** WARNING: Heli " << helicopter_id << ", Trip " << i + 1 << " drops more packages than picked up." << endl;
+                constraint_violated = true;
             }
 
             trip_distance += distance(current_location, home_city_coords);
@@ -158,6 +158,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     try {
+        cout.flush();
         double score = verifyAndCalculateScore(argv[1], argv[2]);
         cout << "\n----------------------------------------\n" << "FINAL SCORE: " << score << "\n----------------------------------------" << endl;
     } catch (const exception& e) {
