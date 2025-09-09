@@ -385,7 +385,7 @@ std::set<State> expand(const State &curr_state, const ProblemData &problem, int 
                         child_state.heliStates[i].trips.back().w_cap_left -= weight_supplies;
                     }
 
-                    child_state.heliStates[i].d_max_left -= travel_dist;
+                    child_state.heliStates[i].d_max_left -= distance(current_pos, problem.villages[v].coords);
 
                     // Modify the village's state
                     child_state.villageStates[v].dry_food_rec += allocation.first.x;
